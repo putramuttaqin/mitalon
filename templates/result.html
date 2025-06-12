@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Submission Result</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Submitted Data</h1>
+    <p><strong>NIP:</strong> {{ nip }}</p>
+    <p><strong>Name:</strong> {{ name }}</p>
+    <p><strong>Uploaded Image:</strong></p>
+    <img src="{{ url_for('static', filename='../uploads/' + image) }}" alt="Uploaded Image" width="200">
+    <br><br>
+    <a href="/">Submit Another</a>
+</body>
+</html>

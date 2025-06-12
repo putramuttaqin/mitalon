@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Enter Your Name</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Welcome!</h1>
+    <form action="/greet" method="POST">
+        <label for="name">Your name:</label><br>
+        <input type="text" id="name" name="name" required><br>
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
