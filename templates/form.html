@@ -28,7 +28,9 @@
       <!-- Photo preview -->
       <div class="preview-area">
         <video id="video" width="320" height="240" autoplay></video>
-        <img id="preview" style="display: none;" width="320" height="240" alt="Captured image">
+        <div style="width: 100%; max-width: 400px; margin: auto;">
+          <img id="captured-image" alt="Captured Photo" />
+        </div>
         <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
 
         <!-- Show location info after capture -->

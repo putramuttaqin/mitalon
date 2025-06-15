@@ -78,3 +78,12 @@ video {
   border-radius: 8px;
   border: 1px solid #ccc;
 }
+
+#captured-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
