@@ -1,30 +1,34 @@
+from flask import Flask, render_template, request, url_for
+import base64
 import os
-from flask import Flask, request, render_template
-from werkzeug.utils import secure_filename
+from datetime import datetime
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB limit
 
-# Create upload folder if it doesn't exist
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def form():
-    if request.method == 'POST':
-        nip = request.form['nip']
-        name = request.form['name']
-        image = request.files['image']
-
-        if image:
-            filename = secure_filename(image.filename)
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            image.save(image_path)
-            return render_template('result.html', nip=nip, name=name, image=filename)
-        else:
-            return "Image upload failed."
-
     return render_template('form.html')
+
+@app.route('/submit', methods=['POST'])
+def submit():
+    nama = request.form['nama']
+    nik = request.form['nik']
+    lat = request.form['latitude']
+    lon = request.form['longitude']
+    
+    # Handle image
+    image_data = request.form['photo'].split(',')[1]  # Remove the data:image/... part
+    image_bytes = base64.b64decode(image_data)
+    filename = f"{nik}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+    with open(filepath, 'wb') as f:
+        f.write(image_bytes)
+
+    return f"Data received:<br>Nama: {nama}<br>NIK: {nik}<br>Latitude: {lat}<br>Longitude: {lon}<br>Photo saved as: {filename}"
 
 if __name__ == '__main__':
     app.run(debug=True)

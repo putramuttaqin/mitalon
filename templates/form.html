@@ -1,22 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Submit Data</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <title>Form with Photo & Address</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Enter Employee Data</h1>
-    <form action="/" method="POST" enctype="multipart/form-data">
-        <label for="nip">NIP:</label><br>
-        <input type="text" name="nip" id="nip" required><br><br>
+  <h1>Form Input</h1>
+  <div class="container">
+    <div class="form-section">
+      <form method="POST" action="/submit">
+        <label for="nama">Nama:</label>
+        <input type="text" name="nama" required>
 
-        <label for="name">Name:</label><br>
-        <input type="text" name="name" id="name" required><br><br>
+        <label for="nik">NIK:</label>
+        <input type="text" name="nik" required>
 
-        <label for="image">Upload Image:</label><br>
-        <input type="file" name="image" id="image" accept="image/*" required><br><br>
+        <input type="hidden" name="photo" id="photo">
+        <input type="hidden" name="latitude" id="latitude">
+        <input type="hidden" name="longitude" id="longitude">
+        <input type="hidden" name="address" id="address">
 
-        <button type="submit">Submit</button>
-    </form>
+        <button type="button" onclick="capture()">Take Photo</button>
+        <input type="submit" value="Submit">
+      </form>
+
+      <!-- Photo preview -->
+      <div class="preview-area">
+        <video id="video" width="320" height="240" autoplay></video>
+        <img id="preview" style="display: none;" width="320" height="240" alt="Captured image">
+        <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+
+        <!-- Show location info after capture -->
+        <div id="location-info" style="margin-top: 10px; display: none;">
+          <p><strong>Location:</strong> <span id="address-text"></span></p>
+          <p><strong>Coordinates:</strong> <span id="coord-text"></span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>
