@@ -1,43 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Form with Photo & Address</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Form Absensi</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <h1>Form Input</h1>
   <div class="container">
-    <div class="form-section">
-      <form method="POST" action="/submit">
-        <label for="nama">Nama:</label>
-        <input type="text" name="nama" required>
+    <h2>Form Absensi</h2>
+    <form>
+      <label for="nama">Nama:</label>
+      <input type="text" id="nama" name="nama" required>
 
-        <label for="nik">NIK:</label>
-        <input type="text" name="nik" required>
+      <label for="nip">NIP:</label>
+      <input type="text" id="nip" name="nip" required>
+    </form>
 
-        <input type="hidden" name="photo" id="photo">
-        <input type="hidden" name="latitude" id="latitude">
-        <input type="hidden" name="longitude" id="longitude">
-        <input type="hidden" name="address" id="address">
-
-        <button type="button" onclick="capture()">Take Photo</button>
-        <input type="submit" value="Submit">
-      </form>
-
-      <!-- Photo preview -->
-      <div class="preview-area">
-        <video id="video" width="320" height="240" autoplay></video>
-        <img id="captured-image" alt="Captured Photo" />
-        <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
-
-        <!-- Show location info after capture -->
-        <div id="location-info" style="margin-top: 10px; display: none;">
-          <p><strong>Location:</strong> <span id="address-text"></span></p>
-          <p><strong>Coordinates:</strong> <span id="coord-text"></span></p>
-        </div>
+    <div class="photo-area">
+      <div class="btn-group">
+        <button id="capture-btn">Ambil Foto</button>
+        <a id="download-btn" download="foto.jpg" style="display:none;">Download Foto</a>
+        <button id="retake-btn" style="display:none;">Foto Ulang</button>
+        <a id="form-link" target="_blank" style="display:none;">Isi Form</a>
       </div>
+      <video id="video" autoplay></video>
+      <img id="captured-image" style="display:none;" />
+      <canvas id="canvas" style="display:none;"></canvas>
     </div>
+
+    <div id="location-info" style="display:none;">
+      <p id="address-text"></p>
+      <p id="coord-text" class="coords"></p>
+    </div>
+
+    <!-- Hidden inputs for JS -->
+    <input type="hidden" id="address">
+    <input type="hidden" id="coordinates">
   </div>
 
   <script src="{{ url_for('static', filename='main.js') }}"></script>
