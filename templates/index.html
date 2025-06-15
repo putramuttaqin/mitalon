@@ -5,46 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Form Kehadiran</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/piexifjs"></script>
   <style>
-    .form-wrapper {
-      max-width: 600px;
-      margin: 2rem auto;
-    }
-    #video, #canvas {
-      width: 100%;
-      max-height: 360px;
-      object-fit: cover;
-      border-radius: 5px;
-    }
-    .hidden { display: none; }
-    .location-info {
-      font-size: 0.9rem;
-      margin-top: 1rem;
-    }
+    .form-wrapper { max-width: 600px; margin: 2rem auto; }
+    #video, #canvas { width: 100%; max-height: 360px; object-fit: cover; border-radius: 5px; }
+    .hidden { display: none !important; }
+    .location-info { font-size: 0.9rem; margin-top: 1rem; }
     .suggestions {
-      border: 1px solid #ccc;
-      border-top: none;
-      max-height: 150px;
-      overflow-y: auto;
-      position: absolute;
-      width: 100%;
-      background: white;
-      z-index: 1000;
+      border: 1px solid #ccc; border-top: none; max-height: 150px;
+      overflow-y: auto; position: absolute; width: 100%; background: white; z-index: 1000;
     }
-    .suggestion-item {
-      padding: 8px 12px;
-      cursor: pointer;
-    }
-    .suggestion-item:hover {
-      background-color: #f0f0f0;
-    }
-    #fotoActions a, #fotoActions button {
-      min-width: 130px;
-    }
+    .suggestion-item { padding: 8px 12px; cursor: pointer; }
+    .suggestion-item:hover { background-color: #f0f0f0; }
+    #fotoActions a, #fotoActions button { min-width: 130px; }
   </style>
 </head>
 <body class="bg-light">
-  <div class="form-wrapper bg-white shadow rounded p-4 position-relative">
+  <div class="form-wrapper bg-white shadow rounded p-4">
     <h3 class="text-center mb-4">Form Kehadiran</h3>
 
     <div class="mb-3 position-relative">
@@ -63,10 +40,8 @@
       <canvas id="canvas" class="hidden mt-3"></canvas>
     </div>
 
-    <!-- Tombol-tombol -->
     <div class="text-center">
       <button id="ambilFoto" class="btn btn-primary mb-3">Ambil Foto</button>
-
       <div id="fotoActions" class="d-flex justify-content-center gap-2 hidden flex-wrap">
         <button id="fotoUlang" class="btn btn-secondary">Foto Ulang</button>
         <a id="downloadFoto" class="btn btn-success" download="foto.jpg">Download Foto</a>
@@ -81,45 +56,37 @@
   </div>
 
   <script>
-    const namaInput = document.getElementById('nama');
-    const nipInput = document.getElementById('nip');
-    const suggestionsBox = document.getElementById('suggestions');
-    const ambilFotoBtn = document.getElementById('ambilFoto');
-    const downloadBtn = document.getElementById('downloadFoto');
-    const isiFormBtn = document.getElementById('isiForm');
-    const fotoUlangBtn = document.getElementById('fotoUlang');
-    const fotoActions = document.getElementById('fotoActions');
-    const alamatSpan = document.getElementById('alamat');
-    const koordinatSpan = document.getElementById('koordinat');
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
+    const $ = id => document.getElementById(id);
+    const [namaInput, nipInput, suggestionsBox, video, canvas] = 
+      ['nama', 'nip', 'suggestions', 'video', 'canvas'].map($);
+    const [ambilBtn, ulangBtn, downloadBtn, isiFormBtn, fotoActions] = 
+      ['ambilFoto', 'fotoUlang', 'downloadFoto', 'isiForm', 'fotoActions'].map($);
+    const [alamatSpan, koordinatSpan] = ['alamat', 'koordinat'].map($);
 
-    let lat = '', long = '', address = '', imageBlob = null;
-    let pegawaiList = [];
+    let lat = '', long = '', address = '', pegawaiList = [];
 
-    // Load pegawai list
+    // Load data pegawai
     fetch('/static/pegawai.json')
       .then(res => res.json())
       .then(data => {
         pegawaiList = data;
         namaInput.addEventListener('input', () => {
           const keyword = namaInput.value.toLowerCase();
-          const matched = pegawaiList.filter(p => p.nama.toLowerCase().includes(keyword));
-          renderSuggestions(matched);
+          const result = pegawaiList.filter(p => p.nama.toLowerCase().includes(keyword));
+          renderSuggestions(result);
         });
       });
 
     function renderSuggestions(list) {
       suggestionsBox.innerHTML = '';
-      if (list.length === 0) return suggestionsBox.classList.add('hidden');
-
-      list.forEach(item => {
+      if (!list.length) return suggestionsBox.classList.add('hidden');
+      list.forEach(p => {
         const div = document.createElement('div');
         div.className = 'suggestion-item';
-        div.textContent = `${item.nama} - ${item.nip}`;
+        div.textContent = `${p.nama} - ${p.nip}`;
         div.onclick = () => {
-          namaInput.value = item.nama;
-          nipInput.value = item.nip;
+          namaInput.value = p.nama;
+          nipInput.value = p.nip;
           suggestionsBox.classList.add('hidden');
         };
         suggestionsBox.appendChild(div);
@@ -127,23 +94,22 @@
       suggestionsBox.classList.remove('hidden');
     }
 
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', e => {
       if (!suggestionsBox.contains(e.target) && e.target !== namaInput) {
         suggestionsBox.classList.add('hidden');
       }
     });
 
-    // Camera
+    // Kamera
     navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => { video.srcObject = stream; })
-      .catch(err => alert('Camera error: ' + err));
+      .then(stream => video.srcObject = stream)
+      .catch(err => alert('Gagal mengakses kamera: ' + err));
 
-    // Geolocation
-    navigator.geolocation.getCurrentPosition(async (pos) => {
+    // Lokasi
+    navigator.geolocation.getCurrentPosition(async pos => {
       lat = pos.coords.latitude;
       long = pos.coords.longitude;
       koordinatSpan.textContent = `${lat}, ${long}`;
-
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${long}&format=json`);
       const data = await res.json();
       address = data.display_name;
@@ -151,42 +117,63 @@
     });
 
     // Ambil Foto
-    ambilFotoBtn.addEventListener('click', () => {
-      const context = canvas.getContext('2d');
+    ambilBtn.onclick = () => {
+      const ctx = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
+      ctx.drawImage(video, 0, 0);
       canvas.classList.remove('hidden');
       video.classList.add('hidden');
 
       canvas.toBlob(blob => {
-        imageBlob = blob;
-        const url = URL.createObjectURL(blob);
-        downloadBtn.href = url;
-        isiFormBtn.href = generateGoogleFormURL();
+        const reader = new FileReader();
+        reader.onload = function () {
+          const jpegData = reader.result;
+          const zeroth = {}, exif = {}, gps = {};
+
+          // Konversi ke format GPS
+          function toDMS(deg) {
+            const d = Math.floor(deg);
+            const m = Math.floor((deg - d) * 60);
+            const s = ((deg - d - m / 60) * 3600);
+            return [[d, 1], [m, 1], [Math.round(s * 100), 100]];
+          }
+
+          gps[piexif.GPSIFD.GPSLatitudeRef] = lat >= 0 ? "N" : "S";
+          gps[piexif.GPSIFD.GPSLatitude] = toDMS(Math.abs(lat));
+          gps[piexif.GPSIFD.GPSLongitudeRef] = long >= 0 ? "E" : "W";
+          gps[piexif.GPSIFD.GPSLongitude] = toDMS(Math.abs(long));
+
+          const exifObj = { "0th": zeroth, "Exif": exif, "GPS": gps };
+          const exifBytes = piexif.dump(exifObj);
+          const newData = piexif.insert(exifBytes, jpegData);
+
+          const updatedBlob = new Blob([Uint8Array.from(atob(newData.split(',')[1]), c => c.charCodeAt(0))], { type: "image/jpeg" });
+          const url = URL.createObjectURL(updatedBlob);
+
+          downloadBtn.href = url;
+          // isiFormBtn.href = generateGoogleFormURL();
+        };
+        reader.readAsDataURL(blob);
       }, 'image/jpeg', 0.7);
 
-      // Sembunyikan Ambil Foto, tampilkan tombol lain
-      ambilFotoBtn.classList.add('hidden');
+
+      ambilBtn.classList.add('hidden');
       fotoActions.classList.remove('hidden');
       isiFormBtn.classList.add('hidden');
-    });
+    };
 
     // Foto Ulang
-    fotoUlangBtn.addEventListener('click', () => {
+    ulangBtn.onclick = () => {
       video.classList.remove('hidden');
       canvas.classList.add('hidden');
-
-      ambilFotoBtn.classList.remove('hidden');
+      ambilBtn.classList.remove('hidden');
       fotoActions.classList.add('hidden');
       isiFormBtn.classList.add('hidden');
-    });
+    };
 
-    // Download Foto
-    downloadBtn.addEventListener('click', () => {
-      isiFormBtn.classList.remove('hidden');
-    });
+    // Tampilkan tombol Isi Form setelah unduh
+    downloadBtn.onclick = () => isiFormBtn.classList.remove('hidden');
 
     function generateGoogleFormURL() {
       const base = "https://docs.google.com/forms/d/e/1FAIpQLSfbQOMAbmcPsEj-SsVx_MoxFV_0MFRyCUphD2DEJhsb-dQyGw/viewform";
@@ -199,9 +186,38 @@
       return `${base}?${params.toString()}`;
     }
 
-    // Initial State
+    isiFormBtn.addEventListener('click', (e) => {
+      e.preventDefault(); // Jangan langsung lompat ke URL
+
+      const nama = namaInput.value.trim();
+      const nip = nipInput.value.trim();
+
+      if (!nama || !nip) {
+        alert("Nama dan NIP wajib diisi.");
+        return;
+      }
+
+      if (!lat || !long || address === '-') {
+        alert("Lokasi belum tersedia.");
+        return;
+      }
+
+      if (canvas.classList.contains('hidden')) {
+        alert("Foto belum diambil.");
+        return;
+      }
+
+      // ✅ Semua valid, generate ulang URL Google Form
+      const formURL = generateGoogleFormURL();
+      isiFormBtn.href = formURL;
+      window.open(formURL, '_blank'); // Arahkan ke form baru
+    });
+
+
+
+    // Inisialisasi
     window.addEventListener('DOMContentLoaded', () => {
-      ambilFotoBtn.classList.remove('hidden');
+      ambilBtn.classList.remove('hidden');
       fotoActions.classList.add('hidden');
       isiFormBtn.classList.add('hidden');
     });
