@@ -1,15 +1,210 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <title>Enter Your Name</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Form Kehadiran</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .form-wrapper {
+      max-width: 600px;
+      margin: 2rem auto;
+    }
+    #video, #canvas {
+      width: 100%;
+      max-height: 360px;
+      object-fit: cover;
+      border-radius: 5px;
+    }
+    .hidden { display: none; }
+    .location-info {
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+    .suggestions {
+      border: 1px solid #ccc;
+      border-top: none;
+      max-height: 150px;
+      overflow-y: auto;
+      position: absolute;
+      width: 100%;
+      background: white;
+      z-index: 1000;
+    }
+    .suggestion-item {
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    .suggestion-item:hover {
+      background-color: #f0f0f0;
+    }
+    #fotoActions a, #fotoActions button {
+      min-width: 130px;
+    }
+  </style>
 </head>
-<body>
-    <h1>Welcome!</h1>
-    <form action="/greet" method="POST">
-        <label for="name">Your name:</label><br>
-        <input type="text" id="name" name="name" required><br>
-        <button type="submit">Submit</button>
-    </form>
+<body class="bg-light">
+  <div class="form-wrapper bg-white shadow rounded p-4 position-relative">
+    <h3 class="text-center mb-4">Form Kehadiran</h3>
+
+    <div class="mb-3 position-relative">
+      <label for="nama" class="form-label fw-bold">Nama:</label>
+      <input type="text" id="nama" class="form-control" placeholder="Ketik nama..." autocomplete="off">
+      <div id="suggestions" class="suggestions hidden"></div>
+    </div>
+
+    <div class="mb-3">
+      <label for="nip" class="form-label fw-bold">NIP:</label>
+      <input type="text" id="nip" class="form-control" readonly>
+    </div>
+
+    <div class="mb-3">
+      <video id="video" autoplay playsinline class="border"></video>
+      <canvas id="canvas" class="hidden mt-3"></canvas>
+    </div>
+
+    <!-- Tombol-tombol -->
+    <div class="text-center">
+      <button id="ambilFoto" class="btn btn-primary mb-3">Ambil Foto</button>
+
+      <div id="fotoActions" class="d-flex justify-content-center gap-2 hidden flex-wrap">
+        <button id="fotoUlang" class="btn btn-secondary">Foto Ulang</button>
+        <a id="downloadFoto" class="btn btn-success" download="foto.jpg">Download Foto</a>
+        <a id="isiForm" class="btn btn-warning hidden" target="_blank">Isi Form</a>
+      </div>
+    </div>
+
+    <div class="location-info">
+      <div><strong>Alamat:</strong> <span id="alamat">-</span></div>
+      <div><strong>Koordinat:</strong> <span id="koordinat">-</span></div>
+    </div>
+  </div>
+
+  <script>
+    const namaInput = document.getElementById('nama');
+    const nipInput = document.getElementById('nip');
+    const suggestionsBox = document.getElementById('suggestions');
+    const ambilFotoBtn = document.getElementById('ambilFoto');
+    const downloadBtn = document.getElementById('downloadFoto');
+    const isiFormBtn = document.getElementById('isiForm');
+    const fotoUlangBtn = document.getElementById('fotoUlang');
+    const fotoActions = document.getElementById('fotoActions');
+    const alamatSpan = document.getElementById('alamat');
+    const koordinatSpan = document.getElementById('koordinat');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+
+    let lat = '', long = '', address = '', imageBlob = null;
+    let pegawaiList = [];
+
+    // Load pegawai list
+    fetch('/static/pegawai.json')
+      .then(res => res.json())
+      .then(data => {
+        pegawaiList = data;
+        namaInput.addEventListener('input', () => {
+          const keyword = namaInput.value.toLowerCase();
+          const matched = pegawaiList.filter(p => p.nama.toLowerCase().includes(keyword));
+          renderSuggestions(matched);
+        });
+      });
+
+    function renderSuggestions(list) {
+      suggestionsBox.innerHTML = '';
+      if (list.length === 0) return suggestionsBox.classList.add('hidden');
+
+      list.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+        div.textContent = `${item.nama} - ${item.nip}`;
+        div.onclick = () => {
+          namaInput.value = item.nama;
+          nipInput.value = item.nip;
+          suggestionsBox.classList.add('hidden');
+        };
+        suggestionsBox.appendChild(div);
+      });
+      suggestionsBox.classList.remove('hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!suggestionsBox.contains(e.target) && e.target !== namaInput) {
+        suggestionsBox.classList.add('hidden');
+      }
+    });
+
+    // Camera
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => { video.srcObject = stream; })
+      .catch(err => alert('Camera error: ' + err));
+
+    // Geolocation
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      lat = pos.coords.latitude;
+      long = pos.coords.longitude;
+      koordinatSpan.textContent = `${lat}, ${long}`;
+
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${long}&format=json`);
+      const data = await res.json();
+      address = data.display_name;
+      alamatSpan.textContent = address;
+    });
+
+    // Ambil Foto
+    ambilFotoBtn.addEventListener('click', () => {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      canvas.classList.remove('hidden');
+      video.classList.add('hidden');
+
+      canvas.toBlob(blob => {
+        imageBlob = blob;
+        const url = URL.createObjectURL(blob);
+        downloadBtn.href = url;
+        isiFormBtn.href = generateGoogleFormURL();
+      }, 'image/jpeg', 0.7);
+
+      // Sembunyikan Ambil Foto, tampilkan tombol lain
+      ambilFotoBtn.classList.add('hidden');
+      fotoActions.classList.remove('hidden');
+      isiFormBtn.classList.add('hidden');
+    });
+
+    // Foto Ulang
+    fotoUlangBtn.addEventListener('click', () => {
+      video.classList.remove('hidden');
+      canvas.classList.add('hidden');
+
+      ambilFotoBtn.classList.remove('hidden');
+      fotoActions.classList.add('hidden');
+      isiFormBtn.classList.add('hidden');
+    });
+
+    // Download Foto
+    downloadBtn.addEventListener('click', () => {
+      isiFormBtn.classList.remove('hidden');
+    });
+
+    function generateGoogleFormURL() {
+      const base = "https://docs.google.com/forms/d/e/1FAIpQLSfbQOMAbmcPsEj-SsVx_MoxFV_0MFRyCUphD2DEJhsb-dQyGw/viewform";
+      const params = new URLSearchParams({
+        'entry.905667977': namaInput.value,
+        'entry.682464978': nipInput.value,
+        'entry.659034556': address,
+        'entry.635143087': `${lat}, ${long}`
+      });
+      return `${base}?${params.toString()}`;
+    }
+
+    // Initial State
+    window.addEventListener('DOMContentLoaded', () => {
+      ambilFotoBtn.classList.remove('hidden');
+      fotoActions.classList.add('hidden');
+      isiFormBtn.classList.add('hidden');
+    });
+  </script>
 </body>
 </html>
