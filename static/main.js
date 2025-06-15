@@ -1,5 +1,5 @@
 const video = document.getElementById('video');
-const preview = document.getElementById('preview');
+const preview = document.getElementById('captured-image');
 const canvas = document.getElementById('canvas');
 
 // Start camera
