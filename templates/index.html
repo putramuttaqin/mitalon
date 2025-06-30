@@ -81,8 +81,9 @@
       <button id="ambilFoto" class="btn btn-primary mb-3">Ambil Foto</button>
       <div id="fotoActions" class="d-flex justify-content-center gap-2 hidden flex-wrap">
         <button id="fotoUlang" class="btn btn-secondary">Foto Ulang</button>
-        <a id="downloadFoto" class="btn btn-success" download="foto.jpg">Download Foto</a>
-        <a id="isiForm" class="btn btn-warning hidden" target="_blank">Isi Form</a>
+        <button id="uploadFoto" class="btn btn-success">Upload Foto</button>
+        <!-- <a id="downloadFoto" class="btn btn-success" download="foto.jpg">Download Foto</a>
+        <a id="isiForm" class="btn btn-warning hidden" target="_blank">Isi Form</a> -->
       </div>
     </div>
 
@@ -96,13 +97,13 @@
     const $ = id => document.getElementById(id);
     const [namaInput, nipInput, suggestionsBox, video, canvas] =
       ['nama', 'nip', 'suggestions', 'video', 'canvas'].map($);
-    const [ambilBtn, ulangBtn, downloadBtn, isiFormBtn, fotoActions] =
-      ['ambilFoto', 'fotoUlang', 'downloadFoto', 'isiForm', 'fotoActions'].map($);
+    const [ambilBtn, ulangBtn, uploadBtn, fotoActions] =
+      ['ambilFoto', 'fotoUlang', 'uploadFoto', 'fotoActions'].map($);
     const [alamatSpan, koordinatSpan] = ['alamat', 'koordinat'].map($);
 
-    let lat = '', long = '', address = '', pegawaiList = [];
+    let lat = '', long = '', address = '', pegawaiList = [], capturedBlob = null;
 
-    // Load data pegawai
+    // Load pegawai list
     fetch('/static/pegawai.json')
       .then(res => res.json())
       .then(data => {
@@ -168,7 +169,6 @@
           const jpegData = reader.result;
           const zeroth = {}, exif = {}, gps = {};
 
-          // Konversi ke format GPS
           function toDMS(deg) {
             const d = Math.floor(deg);
             const m = Math.floor((deg - d) * 60);
@@ -186,18 +186,13 @@
           const newData = piexif.insert(exifBytes, jpegData);
 
           const updatedBlob = new Blob([Uint8Array.from(atob(newData.split(',')[1]), c => c.charCodeAt(0))], { type: "image/jpeg" });
-          const url = URL.createObjectURL(updatedBlob);
-
-          downloadBtn.href = url;
-          // isiFormBtn.href = generateGoogleFormURL();
+          capturedBlob = updatedBlob;
         };
         reader.readAsDataURL(blob);
       }, 'image/jpeg', 0.7);
 
-
       ambilBtn.classList.add('hidden');
       fotoActions.classList.remove('hidden');
-      isiFormBtn.classList.add('hidden');
     };
 
     // Foto Ulang
@@ -206,57 +201,74 @@
       canvas.classList.add('hidden');
       ambilBtn.classList.remove('hidden');
       fotoActions.classList.add('hidden');
-      isiFormBtn.classList.add('hidden');
+      capturedBlob = null;
     };
 
-    // Tampilkan tombol Isi Form setelah unduh
-    downloadBtn.onclick = () => isiFormBtn.classList.remove('hidden');
+    // Simplified upload function
+    uploadBtn.onclick = async () => {
+      if (!validateInputs()) return; // Extract validation to separate function
 
-    function generateGoogleFormURL() {
-      const base = "https://docs.google.com/forms/d/e/1FAIpQLSfbQOMAbmcPsEj-SsVx_MoxFV_0MFRyCUphD2DEJhsb-dQyGw/viewform";
-      const params = new URLSearchParams({
-        'entry.905667977': namaInput.value,
-        'entry.682464978': nipInput.value,
-        'entry.659034556': address,
-        'entry.635143087': `${lat}, ${long}`
-      });
-      return `${base}?${params.toString()}`;
-    }
-
-    isiFormBtn.addEventListener('click', (e) => {
-      e.preventDefault(); // Jangan langsung lompat ke URL
-
-      const nama = namaInput.value.trim();
-      const nip = nipInput.value.trim();
-
-      if (!nama || !nip) {
-        alert("Nama dan NIP wajib diisi.");
-        return;
+      try {
+        const base64Data = await blobToBase64(capturedBlob);
+        await uploadData(base64Data);
+        alert("Upload berhasil!");
+      } catch (err) {
+        alert("Gagal upload: " + (err.message || "Cek konsol"));
+        console.error(err);
       }
+    };
 
+    // Helper functions
+    function validateInputs() {
+      if (!namaInput.value.trim() || !nipInput.value.trim()) {
+        alert("Nama dan NIP wajib diisi.");
+        return false;
+      }
       if (!lat || !long || address === '-') {
         alert("Lokasi belum tersedia.");
-        return;
+        return false;
       }
-
-      if (canvas.classList.contains('hidden')) {
+      if (!capturedBlob) {
         alert("Foto belum diambil.");
-        return;
+        return false;
       }
+      return true;
+    }
 
-      // ✅ Semua valid, generate ulang URL Google Form
-      const formURL = generateGoogleFormURL();
-      isiFormBtn.href = formURL;
-      window.open(formURL, '_blank'); // Arahkan ke form baru
-    });
+    function blobToBase64(blob) {
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(blob);
+      });
+    }
 
+    async function uploadData(base64Data) {
+      const payload = {
+        image: base64Data,
+        nama: namaInput.value.trim(),
+        nip: nipInput.value.trim(),
+        alamat: address,
+        koordinat: `${lat}, ${long}`
+      };
 
+      // First attempt with no-cors
+      await fetch("https://script.google.com/macros/s/AKfycbx29AdQjmrN_jcmhryUJY0z6S36f-Tvld0FDU3BfydyJKh1xSSfNl5fTePvNlW5e_dtGQ/exec", {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
 
-    // Inisialisasi
+      // Verification
+      const check = await fetch(`https://script.google.com/macros/s/AKfycbx29AdQjmrN_jcmhryUJY0z6S36f-Tvld0FDU3BfydyJKh1xSSfNl5fTePvNlW5e_dtGQ/exec?check=${Date.now()}`);
+      const text = await check.text();
+      if (text.includes("Error")) throw new Error(text);
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       ambilBtn.classList.remove('hidden');
       fotoActions.classList.add('hidden');
-      isiFormBtn.classList.add('hidden');
     });
   </script>
 </body>
