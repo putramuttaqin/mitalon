@@ -261,7 +261,10 @@
       });
 
       // Verification
-      const check = await fetch(`https://script.google.com/macros/s/AKfycbx29AdQjmrN_jcmhryUJY0z6S36f-Tvld0FDU3BfydyJKh1xSSfNl5fTePvNlW5e_dtGQ/exec?check=${Date.now()}`);
+      const check = await fetch(`https://script.google.com/macros/s/AKfycbx29AdQjmrN_jcmhryUJY0z6S36f-Tvld0FDU3BfydyJKh1xSSfNl5fTePvNlW5e_dtGQ/exec?check=${Date.now()}`, {
+        method: "GET",
+        mode: "no-cors"
+      });
       const text = await check.text();
       if (text.includes("Error")) throw new Error(text);
     }
