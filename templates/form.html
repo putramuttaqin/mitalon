@@ -1,17 +1,9 @@
-<!DOCTYPE html>
-<html lang="id">
+{% extends "base.html" %}
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mita Lon</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/piexifjs"></script>
-  <link href="/static/style.css" rel="stylesheet">
-  <link rel="icon" href="/static/favicon.ico">
-</head>
+{% block title %}Mita Lon{% endblock %}
 
-<body class="bg-light">
+{% block content %}
+<div class="bg-light">
   <div class="form-wrapper bg-white shadow rounded p-4">
     <h3 class="text-center mb-4">Mita lon</h3>
 
@@ -45,31 +37,31 @@
     </div>
   </div>
 
-  <!-- Loading Popup -->
+  <!-- Popups -->
   <div id="loadingPopup" class="popup-overlay hidden">
     <div class="popup-content">
-      <img src="/static/loading-tr.gif" alt="Loading" class="popup-gif">
+      <img src="/static/images/loading.gif" alt="Loading" class="popup-gif">
       <p class="popup-text">Processing your submission...</p>
     </div>
   </div>
 
-  <!-- Success Popup -->
   <div id="successPopup" class="popup-overlay hidden">
     <div class="popup-content">
-      <img src="/static/success-tr.gif" alt="Success" class="popup-gif">
+      <img src="/static/images/success.gif" alt="Success" class="popup-gif">
       <p class="popup-text">Upload berhasil!</p>
     </div>
   </div>
 
-  <!-- Error Popup -->
   <div id="errorPopup" class="popup-overlay hidden">
     <div class="popup-content">
-      <img src="/static/error-tr.gif" alt="Error" class="popup-gif">
+      <img src="/static/images/error.gif" alt="Error" class="popup-gif">
       <p class="popup-text" id="errorMessage">Gagal upload!</p>
     </div>
   </div>
+</div>
+{% endblock %}
 
-  <script src="/static/script.js"></script>
-</body>
-
-</html>
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/piexifjs"></script>
+<script src="/static/js/script.js"></script>
+{% endblock %}

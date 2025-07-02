@@ -1,3 +1,36 @@
+/* Homepage */
+/* Dark Mode */
+.dark-mode {
+    background-color: #121212;
+    color: #ffffff;
+    min-height: 100vh;
+}
+
+/* Centered Home Content */
+.home-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+.home-content {
+    text-align: center;
+    max-width: 600px;
+}
+
+.logo {
+    height: 150px;
+    margin-bottom: 1.5rem;
+}
+
+/* Dark Mode Form (add to form.html's wrapper div) */
+.dark-form {
+    background-color: #1e1e1e !important;
+    color: #f8f9fa;
+}
+
 .form-wrapper {
   max-width: 600px;
   margin: 2rem auto;
@@ -84,4 +117,15 @@
 
 .hidden {
   display: none !important;
+}
+
+@media (max-width: 768px) {
+  .popup-gif {
+    width: 150px;
+    height: 150px;
+  }
+  .form-wrapper {
+    padding: 1rem;
+    margin: 1rem auto;
+  }
 }

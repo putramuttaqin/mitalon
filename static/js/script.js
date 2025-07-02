@@ -117,6 +117,9 @@ uploadBtn.onclick = async () => {
     const base64Data = await blobToBase64(capturedBlob);
     await uploadData(base64Data);
     showPopup('success');
+    setTimeout(() => {
+      window.location.href = "/"; // Redirect to home after popup
+    }, 2000); // Matches popup display time
   } catch (err) {
     showPopup('error', err.message || "Terjadi kesalahan");
     console.error(err);
@@ -180,14 +183,14 @@ function showPopup(type, message = "") {
   document.querySelectorAll('.popup-overlay').forEach(popup => {
     popup.classList.add('hidden');
   });
-  
+
   // Show requested popup
   const popup = document.getElementById(`${type}Popup`);
   if (message && type === 'error') {
     document.getElementById('errorMessage').textContent = message;
   }
   popup.classList.remove('hidden');
-  
+
   // Auto-close rules
   if (type === 'success') {
     setTimeout(() => window.location.reload(), 2000);
