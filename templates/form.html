@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Mita Lon{% endblock %}
+
+{% block content %}
+<div class="bg-light">
+  <div class="form-wrapper bg-white shadow rounded p-4">
+    <h3 class="text-center mb-4">Mita lon</h3>
+
+    <div class="mb-3 position-relative">
+      <label for="nama" class="form-label fw-bold">Nama:</label>
+      <input type="text" id="nama" class="form-control" placeholder="Ketik nama..." autocomplete="off">
+      <div id="suggestions" class="suggestions hidden"></div>
+    </div>
+
+    <div class="mb-3">
+      <video id="video" autoplay playsinline class="border"></video>
+      <canvas id="canvas" class="hidden mt-3"></canvas>
+    </div>
+
+    <div class="text-center">
+      <button id="ambilFoto" class="btn btn-primary mb-3">Ambil Foto</button>
+      <div id="fotoActions" class="d-flex justify-content-center gap-2 hidden flex-wrap">
+        <button id="fotoUlang" class="btn btn-secondary">Foto Ulang</button>
+        <button id="uploadFoto" class="btn btn-success">Upload Foto</button>
+      </div>
+    </div>
+
+    <div class="location-info">
+      <div><strong>Alamat:</strong> <span id="alamat">-</span></div>
+      <div><strong>Koordinat:</strong> <span id="koordinat">-</span></div>
+    </div>
+  </div>
+
+  <!-- Popups -->
+  <div id="loadingPopup" class="popup-overlay hidden">
+    <div class="popup-content">
+      <img src="/static/images/loading.gif" alt="Loading" class="popup-gif">
+      <p class="popup-text">Processing your submission...</p>
+    </div>
+  </div>
+
+  <div id="successPopup" class="popup-overlay hidden">
+    <div class="popup-content">
+      <img src="/static/images/success.gif" alt="Success" class="popup-gif">
+      <p class="popup-text">Upload berhasil!</p>
+    </div>
+  </div>
+
+  <div id="errorPopup" class="popup-overlay hidden">
+    <div class="popup-content">
+      <img src="/static/images/error.gif" alt="Error" class="popup-gif">
+      <p class="popup-text" id="errorMessage">Gagal upload!</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/piexifjs"></script>
+<script src="/static/js/script.js"></script>
+{% endblock %}
