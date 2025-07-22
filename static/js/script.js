@@ -1,6 +1,6 @@
 const $ = id => document.getElementById(id);
-const [namaInput, nipInput, suggestionsBox, video, canvas] =
-  ['nama', 'nip', 'suggestions', 'video', 'canvas'].map($);
+const [namaInput, suggestionsBox, video, canvas] =
+  ['nama', 'suggestions', 'video', 'canvas'].map($);
 const [ambilBtn, ulangBtn, uploadBtn, fotoActions] =
   ['ambilFoto', 'fotoUlang', 'uploadFoto', 'fotoActions'].map($);
 const [alamatSpan, koordinatSpan] = ['alamat', 'koordinat'].map($);
@@ -14,7 +14,7 @@ fetch('/static/pegawai.json')
     pegawaiList = data;
     namaInput.addEventListener('input', () => {
       const keyword = namaInput.value.toLowerCase();
-      const result = pegawaiList.filter(p => p.nama.toLowerCase().includes(keyword));
+      const result = pegawaiList.filter(p => p.toLowerCase().includes(keyword));
       renderSuggestions(result);
     });
   });
@@ -25,10 +25,9 @@ function renderSuggestions(list) {
   list.forEach(p => {
     const div = document.createElement('div');
     div.className = 'suggestion-item';
-    div.textContent = `${p.nama} - ${p.nip}`;
+    div.textContent = `${p}`;
     div.onclick = () => {
-      namaInput.value = p.nama;
-      nipInput.value = p.nip;
+      namaInput.value = p;
       suggestionsBox.classList.add('hidden');
     };
     suggestionsBox.appendChild(div);
@@ -128,8 +127,8 @@ uploadBtn.onclick = async () => {
 
 // Helper functions
 function validateInputs() {
-  if (!namaInput.value.trim() || !nipInput.value.trim()) {
-    alert("Nama dan NIP wajib diisi.");
+  if (!namaInput.value.trim()) {
+    alert("Nama wajib diisi.");
     return false;
   }
   if (!lat || !long || address === '-') {
@@ -155,7 +154,6 @@ async function uploadData(base64Data) {
   const payload = {
     image: base64Data,
     nama: namaInput.value.trim(),
-    nip: nipInput.value.trim(),
     alamat: address,
     koordinat: `${lat}, ${long}`
   };
