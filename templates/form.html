@@ -7,28 +7,32 @@
   <div class="form-wrapper bg-white shadow rounded p-4">
     <h3 class="text-center mb-4">Mita lon</h3>
 
+    <!-- Nama Input -->
     <div class="mb-3 position-relative">
       <label for="nama" class="form-label fw-bold">Nama:</label>
       <input type="text" id="nama" class="form-control" placeholder="Ketik nama..." autocomplete="off">
       <div id="suggestions" class="suggestions hidden"></div>
     </div>
 
+    <!-- Location Info (Moved up) -->
+    <div class="location-info mb-3">
+      <div><strong>Alamat:</strong> <span id="alamat">-</span></div>
+      <div><strong>Koordinat:</strong> <span id="koordinat">-</span></div>
+    </div>
+
+    <!-- Kamera -->
     <div class="mb-3">
       <video id="video" autoplay playsinline class="border"></video>
       <canvas id="canvas" class="hidden mt-3"></canvas>
     </div>
 
+    <!-- Foto Buttons -->
     <div class="text-center">
       <button id="ambilFoto" class="btn btn-primary mb-3">Ambil Foto</button>
       <div id="fotoActions" class="d-flex justify-content-center gap-2 hidden flex-wrap">
         <button id="fotoUlang" class="btn btn-secondary">Foto Ulang</button>
         <button id="uploadFoto" class="btn btn-success">Upload Foto</button>
       </div>
-    </div>
-
-    <div class="location-info">
-      <div><strong>Alamat:</strong> <span id="alamat">-</span></div>
-      <div><strong>Koordinat:</strong> <span id="koordinat">-</span></div>
     </div>
   </div>
 
@@ -44,6 +48,13 @@
     <div class="popup-content">
       <img src="/static/images/success.gif" alt="Success" class="popup-gif">
       <p class="popup-text">Upload berhasil!</p>
+    </div>
+  </div>
+
+  <div id="duplicatePopup" class="popup-overlay hidden">
+    <div class="popup-content">
+      <img src="/static/images/duplicate.png" alt="Duplicate" class="popup-gif">
+      <p class="popup-text">Sudah Absen</p>
     </div>
   </div>
 

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Daftar Hadir{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h2 class="text-center mb-4">Daftar yang Telah Absen ✅</h2>
+  <ul class="list-group">
+    {% for name in uploaded_names %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      {{ name }}
+      <span class="badge bg-success">✔</span>
+    </li>
+    {% endfor %}
+  </ul>
+  <div class="text-center mt-4">
+    <a href="/" class="btn btn-secondary">Kembali ke Home</a>
+  </div>
+</div>
+{% endblock %}
