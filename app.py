@@ -41,6 +41,7 @@ def save_submission(name, alamat, koordinat, image_b64):
     img_bytes = base64.b64decode(image_b64)
     timestamp_raw = datetime.now()
     timestamp_str = timestamp_raw.strftime('%Y%m%d_%H%M%S')
+    date_key = timestamp_raw.strftime('%d%m%Y')
     safe_name = normalize_name(name).replace(' ', '_')
     image_filename = f"{timestamp_str}_{safe_name}.jpg"
     image_path = os.path.join(UPLOAD_FOLDER, image_filename)
@@ -50,7 +51,7 @@ def save_submission(name, alamat, koordinat, image_b64):
 
     # Update JSON
     submissions = load_submissions()
-    submissions[name] = {
+    submissions[date_key][name] = {
         'alamat': alamat,
         'koordinat': koordinat,
         'image': image_filename,
