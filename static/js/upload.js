@@ -5,7 +5,7 @@ const uploadBtn = $('uploadFoto');
 const alamatSpan = $('alamat');
 const koordinatSpan = $('koordinat');
 
-let lat = '', long = '', address = '', pegawaiList = [], capturedBlob = null;
+let lat = '', long = '', address = '', pegawaiList = [];
 
 // Load pegawai list
 fetch('/static/pegawai.json')
