@@ -1,8 +1,89 @@
 import os
 import json
+import threading
+import base64
+import queue
+from datetime import datetime
+from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify
 
+# === CONFIG ===
 app = Flask(__name__)
+task_queue = queue.Queue()
+load_dotenv()
+
+UPLOAD_FOLDER = 'uploads'
+DATA_FOLDER = 'data'
+SUBMISSION_JSON = os.path.join(DATA_FOLDER, 'submissions.json')
+GAS_URL = "https://script.google.com/macros/s/YOUR_GAS_URL/exec"  # Replace with your actual URL
+
+# Ensure folders exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(DATA_FOLDER, exist_ok=True)
+
+# === UTILITIES ===
+def background_worker():
+    import requests
+    while True:
+        payload = task_queue.get()
+        try:
+            requests.post(GAS_URL, json=payload, timeout=10)
+        except Exception as e:
+            print(f"[GAS Upload Failed] {e}")
+        task_queue.task_done()
+        
+# Start one background thread when the app starts
+threading.Thread(target=background_worker, daemon=True).start()
+
+def normalize_name(name):
+    return name.strip().lower()
+
+def load_uploaded_names():
+    try:
+        with open(SUBMISSION_JSON, 'r') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+def save_uploaded_name(name):
+    name = normalize_name(name)
+    names = load_uploaded_names()
+    if name not in names:
+        names.append(name)
+        with open(SUBMISSION_JSON, 'w') as f:
+            json.dump(names, f)
+
+def save_submission(name, alamat, koordinat, image_b64):
+    # Save image
+    img_bytes = base64.b64decode(image_b64)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    safe_name = normalize_name(name).replace(' ', '_')
+    image_filename = f"{safe_name}_{timestamp}.jpg"
+    image_path = os.path.join(UPLOAD_FOLDER, image_filename)
+    with open(image_path, 'wb') as f:
+        f.write(img_bytes)
+
+    # Save JSON data
+    try:
+        with open(SUBMISSION_JSON, 'r') as f:
+            data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        data = {}
+
+    data[name] = {
+        'alamat': alamat,
+        'koordinat': koordinat,
+        'image': image_filename,
+        'timestamp': timestamp
+    }
+
+    with open(SUBMISSION_JSON, 'w') as f:
+        json.dump(data, f, indent=2)
+
+    return image_filename
+
+def forward_to_gas_async(payload):
+    task_queue.put(payload)
 
 # === ROUTES ===
 @app.route('/')
@@ -13,67 +94,44 @@ def home():
 def form():
     return render_template('form.html')
 
-
-# === UPLOAD LOGIC ===
-UPLOAD_LOG_PATH = 'data/upload_log.json'
-
-def normalize_name(name):
-    return name.strip().lower()
-
-def load_uploaded_names():
-    if not os.path.exists(UPLOAD_LOG_PATH):
-        return []
-    try:
-        with open(UPLOAD_LOG_PATH, 'r') as f:
-            return json.load(f)
-    except (json.JSONDecodeError, IOError):
-        return []
-
-def save_uploaded_name(name):
-    name = normalize_name(name)
-    names = load_uploaded_names()
-    if name not in names:
-        names.append(name)
-        with open(UPLOAD_LOG_PATH, 'w') as f:
-            json.dump(names, f)
-
-@app.route('/uploaded')
-def check_uploaded():
-    name = request.args.get('name', '').strip()
-    if not name:
-        return jsonify({'uploaded': False})
-    normalized = normalize_name(name)
-    names = [normalize_name(n) for n in load_uploaded_names()]
-    return jsonify({'uploaded': normalized in names})
-
-@app.route('/log_uploaded')
-def log_uploaded():
-    name = request.args.get('name', '').strip()
-    if name:
-        save_uploaded_name(name)
-        return jsonify({'status': 'ok'})
-    return jsonify({'status': 'error'}), 400
-
 @app.route('/daftar')
 def daftar():
-    log_path = os.path.join('data', 'upload_log.json')
     try:
-        with open(log_path, 'r') as f:
+        with open(SUBMISSION_JSON, 'r') as f:
             uploaded_names = json.load(f)
     except Exception:
         uploaded_names = []
-
     return render_template('daftar.html', uploaded_names=uploaded_names)
 
-# === Your upload route here ===
-# @app.route('/upload', methods=['POST'])
-# def upload(): ...
+@app.route('/upload', methods=['POST'])
+def upload():
+    try:
+        data = request.get_json()
+        name = data.get('nama', '').strip()
+        alamat = data.get('alamat', '')
+        koordinat = data.get('koordinat', '')
+        image_b64 = data.get('image', '')
 
+        if not name or not image_b64:
+            return jsonify({'status': 'error', 'message': 'Invalid data'}), 400
+
+        image_filename = save_submission(name, alamat, koordinat, image_b64)
+
+        forward_to_gas_async({
+            'nama': name,
+            'alamat': alamat,
+            'koordinat': koordinat,
+            'image': image_b64
+        })
+
+        return jsonify({'status': 'ok', 'filename': image_filename})
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# === MAIN ===
 if __name__ == '__main__':
-    # Ensure log file exists at startup
-    os.makedirs('data', exist_ok=True)
-    if not os.path.exists(UPLOAD_LOG_PATH):
-        with open(UPLOAD_LOG_PATH, 'w') as f:
+    if not os.path.exists(SUBMISSION_JSON):
+        with open(SUBMISSION_JSON, 'w') as f:
             json.dump([], f)
-
     app.run(debug=True)

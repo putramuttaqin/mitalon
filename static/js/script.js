@@ -22,7 +22,6 @@ fetch('/static/pegawai.json')
 function renderSuggestions(list) {
   suggestionsBox.innerHTML = '';
   if (!list.length) return suggestionsBox.classList.add('hidden');
-
   list.forEach(p => {
     const div = document.createElement('div');
     div.className = 'suggestion-item';
@@ -33,7 +32,7 @@ function renderSuggestions(list) {
     };
     suggestionsBox.appendChild(div);
   });
-  suggestionsBox.classList.remove('hidden'); // ⬅️ this line ensures it shows
+  suggestionsBox.classList.remove('hidden');
 }
 
 async function hasAlreadyUploaded(name) {
@@ -65,7 +64,7 @@ navigator.geolocation.getCurrentPosition(async pos => {
   koordinatSpan.textContent = `${lat}, ${long}`;
   const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${long}&format=json`);
   const data = await res.json();
-  address = data.display_name;
+  address = data.display_name || '-';
   alamatSpan.textContent = address;
 });
 
@@ -79,31 +78,7 @@ ambilBtn.onclick = () => {
   video.classList.add('hidden');
 
   canvas.toBlob(blob => {
-    const reader = new FileReader();
-    reader.onload = function () {
-      const jpegData = reader.result;
-      const zeroth = {}, exif = {}, gps = {};
-
-      function toDMS(deg) {
-        const d = Math.floor(deg);
-        const m = Math.floor((deg - d) * 60);
-        const s = ((deg - d - m / 60) * 3600);
-        return [[d, 1], [m, 1], [Math.round(s * 100), 100]];
-      }
-
-      gps[piexif.GPSIFD.GPSLatitudeRef] = lat >= 0 ? "N" : "S";
-      gps[piexif.GPSIFD.GPSLatitude] = toDMS(Math.abs(lat));
-      gps[piexif.GPSIFD.GPSLongitudeRef] = long >= 0 ? "E" : "W";
-      gps[piexif.GPSIFD.GPSLongitude] = toDMS(Math.abs(long));
-
-      const exifObj = { "0th": zeroth, "Exif": exif, "GPS": gps };
-      const exifBytes = piexif.dump(exifObj);
-      const newData = piexif.insert(exifBytes, jpegData);
-
-      const updatedBlob = new Blob([Uint8Array.from(atob(newData.split(',')[1]), c => c.charCodeAt(0))], { type: "image/jpeg" });
-      capturedBlob = updatedBlob;
-    };
-    reader.readAsDataURL(blob);
+    capturedBlob = blob;
   }, 'image/jpeg', 0.7);
 
   ambilBtn.classList.add('hidden');
@@ -122,30 +97,16 @@ ulangBtn.onclick = () => {
 // Upload Button Click
 uploadBtn.onclick = async () => {
   const name = namaInput.value.trim();
-
-  // Check if already uploaded
-  const uploaded = await hasAlreadyUploaded(name);
-  if (uploaded) {
-    showPopup('duplicate');
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 2000);
-    return;
-  }
-
   if (!validateInputs()) return;
 
   try {
     showPopup('loading');
     const base64Data = await blobToBase64(capturedBlob);
-    await uploadData(base64Data);
-    await fetch(`/log_uploaded?name=${encodeURIComponent(name)}`);
+    await uploadToServer(base64Data);
     showPopup('success');
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 2000);
+    setTimeout(() => window.location.href = "/", 2000);
   } catch (err) {
-    showPopup('error', err.message || "Terjadi kesalahan");
+    showPopup('error', err.message || "Terjadi kesalahan saat upload.");
     console.error(err);
   }
 };
@@ -167,7 +128,7 @@ function validateInputs() {
   return true;
 }
 
-// Helper to convert Blob to Base64
+// Convert Blob to Base64
 function blobToBase64(blob) {
   return new Promise(resolve => {
     const reader = new FileReader();
@@ -176,8 +137,8 @@ function blobToBase64(blob) {
   });
 }
 
-// Upload to Google Apps Script
-async function uploadData(base64Data) {
+// Upload to local /upload route
+async function uploadToServer(base64Data) {
   const payload = {
     image: base64Data,
     nama: namaInput.value.trim(),
@@ -185,19 +146,19 @@ async function uploadData(base64Data) {
     koordinat: `${lat}, ${long}`
   };
 
-  // Send POST request
-  await fetch("https://script.google.com/macros/s/AKfycbx29AdQjmrN_jcmhryUJY0z6S36f-Tvld0FDU3BfydyJKh1xSSfNl5fTePvNlW5e_dtGQ/exec", {
+  const res = await fetch("/upload", {
     method: "POST",
-    mode: "no-cors",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   });
 
-  // Optional dummy verification (won't work in no-cors mode)
-  await new Promise(res => setTimeout(res, 500));
+  const result = await res.json();
+  if (!res.ok || result.status !== "ok") {
+    throw new Error(result.message || "Gagal upload.");
+  }
 }
 
-// Popup Controller
+// Popup controller
 function showPopup(type, message = "") {
   document.querySelectorAll('.popup-overlay').forEach(p => p.classList.add('hidden'));
   const popup = document.getElementById(`${type}Popup`);
@@ -206,11 +167,7 @@ function showPopup(type, message = "") {
   }
   popup.classList.remove('hidden');
 
-  if (type === 'success') {
-    setTimeout(() => window.location.reload(), 2000);
-  } else if (type === 'error') {
-    setTimeout(() => popup.classList.add('hidden'), 3000);
-  } else if (type === 'duplicate') {
+  if (['success', 'error', 'duplicate'].includes(type)) {
     setTimeout(() => popup.classList.add('hidden'), 3000);
   }
 }
@@ -224,13 +181,8 @@ window.addEventListener('DOMContentLoaded', () => {
     const name = namaInput.value.trim();
     if (name) {
       const uploaded = await hasAlreadyUploaded(name);
-      if (uploaded) {
-        uploadBtn.disabled = true;
-        uploadBtn.textContent = "Sudah Upload";
-      } else {
-        uploadBtn.disabled = false;
-        uploadBtn.textContent = "Upload Foto";
-      }
+      uploadBtn.disabled = uploaded;
+      uploadBtn.textContent = uploaded ? "Sudah Upload" : "Upload Foto";
     }
   });
 });
