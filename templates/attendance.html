@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Detail Kehadiran{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="text-center mt-4">
+    <a href="/" class="btn btn-secondary">Kembali ke Home</a>
+  </div>
+  <h2 class="text-center mb-4">Detail Kehadiran</h2>
+
+  <div class="mb-3">
+    <input type="text" id="searchInput" class="form-control" placeholder="Cari nama...">
+  </div>
+
+  {% for attendee in attendees %}
+  <div class="card mb-4 peserta">
+    <div class="row g-0">
+      <div class="col-md-4">
+        <img src="{{ url_for('static', filename='uploads/' ~ attendee.image) }}" class="img-fluid rounded-start"
+          alt="{{ attendee.name }}">
+      </div>
+      <div class="col-md-8">
+        <div class="card-body">
+          <h5 class="card-title attendee-name">{{ attendee.name }}</h5>
+          <p class="card-text"><strong>Alamat:</strong> {{ attendee.alamat }}</p>
+          <p class="card-text"><strong>Waktu Absen:</strong> {{ attendee.timestamp }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/search-filter.js"></script>
+{% endblock %}

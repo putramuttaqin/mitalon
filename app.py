@@ -1,27 +1,65 @@
 import os
 import json
-import threading
 import base64
 import queue
+import threading
 from datetime import datetime
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 
 # === CONFIG ===
-app = Flask(__name__)
-task_queue = queue.Queue()
 load_dotenv()
+app = Flask(__name__)
 
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = 'static/uploads'
 DATA_FOLDER = 'data'
 SUBMISSION_JSON = os.path.join(DATA_FOLDER, 'submissions.json')
-GAS_URL = "https://script.google.com/macros/s/YOUR_GAS_URL/exec"  # Replace with your actual URL
+GAS_URL = os.getenv('GAS_URL', "https://script.google.com/macros/s/YOUR_GAS_URL/exec")
 
-# Ensure folders exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(DATA_FOLDER, exist_ok=True)
 
+task_queue = queue.Queue()
+
 # === UTILITIES ===
+def normalize_name(name):
+    return name.strip().lower()
+
+def load_submissions():
+    try:
+        with open(SUBMISSION_JSON, 'r') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_submissions(data):
+    with open(SUBMISSION_JSON, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def save_submission(name, alamat, koordinat, image_b64):
+    # Decode and save image
+    img_bytes = base64.b64decode(image_b64)
+    timestamp_raw = datetime.now()
+    timestamp_str = timestamp_raw.strftime('%Y%m%d_%H%M%S')
+    safe_name = normalize_name(name).replace(' ', '_')
+    image_filename = f"{timestamp_str}_{safe_name}.jpg"
+    image_path = os.path.join(UPLOAD_FOLDER, image_filename)
+
+    with open(image_path, 'wb') as f:
+        f.write(img_bytes)
+
+    # Update JSON
+    submissions = load_submissions()
+    submissions[name] = {
+        'alamat': alamat,
+        'koordinat': koordinat,
+        'image': image_filename,
+        'timestamp': timestamp_str
+    }
+    save_submissions(submissions)
+
+    return image_filename
+
 def background_worker():
     import requests
     while True:
@@ -31,59 +69,12 @@ def background_worker():
         except Exception as e:
             print(f"[GAS Upload Failed] {e}")
         task_queue.task_done()
-        
-# Start one background thread when the app starts
-threading.Thread(target=background_worker, daemon=True).start()
-
-def normalize_name(name):
-    return name.strip().lower()
-
-def load_uploaded_names():
-    try:
-        with open(SUBMISSION_JSON, 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
-
-def save_uploaded_name(name):
-    name = normalize_name(name)
-    names = load_uploaded_names()
-    if name not in names:
-        names.append(name)
-        with open(SUBMISSION_JSON, 'w') as f:
-            json.dump(names, f)
-
-def save_submission(name, alamat, koordinat, image_b64):
-    # Save image
-    img_bytes = base64.b64decode(image_b64)
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    safe_name = normalize_name(name).replace(' ', '_')
-    image_filename = f"{safe_name}_{timestamp}.jpg"
-    image_path = os.path.join(UPLOAD_FOLDER, image_filename)
-    with open(image_path, 'wb') as f:
-        f.write(img_bytes)
-
-    # Save JSON data
-    try:
-        with open(SUBMISSION_JSON, 'r') as f:
-            data = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        data = {}
-
-    data[name] = {
-        'alamat': alamat,
-        'koordinat': koordinat,
-        'image': image_filename,
-        'timestamp': timestamp
-    }
-
-    with open(SUBMISSION_JSON, 'w') as f:
-        json.dump(data, f, indent=2)
-
-    return image_filename
 
 def forward_to_gas_async(payload):
     task_queue.put(payload)
+
+# Start background worker
+threading.Thread(target=background_worker, daemon=True).start()
 
 # === ROUTES ===
 @app.route('/')
@@ -94,14 +85,26 @@ def home():
 def form():
     return render_template('form.html')
 
-@app.route('/daftar')
-def daftar():
-    try:
-        with open(SUBMISSION_JSON, 'r') as f:
-            uploaded_names = json.load(f)
-    except Exception:
-        uploaded_names = []
-    return render_template('daftar.html', uploaded_names=uploaded_names)
+@app.route('/attendance')
+def show_details():
+    raw_data = load_submissions()
+    attendees = []
+
+    for name, details in raw_data.items():
+        try:
+            dt = datetime.strptime(details["timestamp"], "%Y%m%d_%H%M%S")
+            formatted_time = dt.strftime("%d/%m/%Y - %H:%M:%S")
+        except ValueError:
+            formatted_time = details["timestamp"]
+
+        attendees.append({
+            "name": name,
+            "alamat": details.get("alamat", ""),
+            "image": details.get("image", ""),
+            "timestamp": formatted_time,
+        })
+
+    return render_template("attendance.html", attendees=attendees)
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -129,9 +132,13 @@ def upload():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+# Optional: serve uploads from static/uploads if needed via custom route
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
+
 # === MAIN ===
 if __name__ == '__main__':
     if not os.path.exists(SUBMISSION_JSON):
-        with open(SUBMISSION_JSON, 'w') as f:
-            json.dump([], f)
+        save_submissions({})
     app.run(debug=True)

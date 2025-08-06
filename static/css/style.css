@@ -119,7 +119,8 @@
   /* Better readability */
 }
 
-.hidden {
+.hidden,
+hidden {
   display: none !important;
 }
 
