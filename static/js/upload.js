@@ -1,12 +1,13 @@
-const namaInput = document.getElementById('nama');
-const suggestionsBox = document.getElementById('suggestions');
-const uploadBtn = document.getElementById('uploadFoto');
-const alamatSpan = document.getElementById('alamat');
-const koordinatSpan = document.getElementById('koordinat');
+const $ = id => document.getElementById(id);
+const namaInput = $('nama');
+const suggestionsBox = $('suggestions');
+const uploadBtn = $('uploadFoto');
+const alamatSpan = $('alamat');
+const koordinatSpan = $('koordinat');
 
-let lat = '', long = '', address = '', pegawaiList = [];
+let lat = '', long = '', address = '', pegawaiList = [], capturedBlob = null;
 
-// Load pegawai list for autocomplete
+// Load pegawai list
 fetch('/static/pegawai.json')
   .then(res => res.json())
   .then(data => {
@@ -34,18 +35,20 @@ function renderSuggestions(list) {
   suggestionsBox.classList.remove('hidden');
 }
 
-// Dismiss suggestions
+// Suggestions hide on click elsewhere
 document.addEventListener('click', e => {
   if (!suggestionsBox.contains(e.target) && e.target !== namaInput) {
     suggestionsBox.classList.add('hidden');
   }
 });
 
+// Reload suggestions on focus
 namaInput.addEventListener('focus', () => {
   namaInput.value = '';
   renderSuggestions(pegawaiList);
 });
 
+// Disable upload button if already uploaded
 namaInput.addEventListener('blur', async () => {
   const name = namaInput.value.trim();
   if (name) {
@@ -61,7 +64,7 @@ async function hasAlreadyUploaded(name) {
   return data.uploaded;
 }
 
-// Lokasi
+// Get location
 navigator.geolocation.getCurrentPosition(async pos => {
   lat = pos.coords.latitude;
   long = pos.coords.longitude;
@@ -72,14 +75,15 @@ navigator.geolocation.getCurrentPosition(async pos => {
   alamatSpan.textContent = address;
 });
 
-// Upload
+// Upload button click
 uploadBtn.onclick = async () => {
   const name = namaInput.value.trim();
   if (!validateInputs()) return;
 
   try {
     showPopup('loading');
-    const base64Data = await blobToBase64(capturedBlob);
+    const resized = await resizeImage(capturedBlob, 800, 0.7); // Resize to 800px max, 70% quality
+    const base64Data = await blobToBase64(resized);
     await uploadToServer(base64Data, name);
     showPopup('success');
     setTimeout(() => window.location.href = "/", 2000);
@@ -92,7 +96,7 @@ uploadBtn.onclick = async () => {
 function validateInputs() {
   if (!namaInput.value.trim()) return alert("Nama wajib diisi.");
   if (!lat || !long || address === '-') return alert("Lokasi belum tersedia.");
-  if (!capturedBlob) return alert("Foto belum diambil.");
+  if (!capturedBlob) return alert("Foto belum dipilih.");
   return true;
 }
 
@@ -134,4 +138,31 @@ function showPopup(type, message = "") {
   if (['success', 'error', 'duplicate'].includes(type)) {
     setTimeout(() => popup.classList.add('hidden'), 3000);
   }
+}
+
+// Resize image using hidden canvas
+function resizeImage(blob, maxSize = 800, quality = 0.7) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+
+      if (width > maxSize || height > maxSize) {
+        if (width > height) {
+          height *= maxSize / width;
+          width = maxSize;
+        } else {
+          width *= maxSize / height;
+          height = maxSize;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(resized => resolve(resized), 'image/jpeg', quality);
+    };
+    img.src = URL.createObjectURL(blob);
+  });
 }
