@@ -4,6 +4,7 @@ import base64
 import queue
 import threading
 from datetime import datetime
+from zoneinfo import ZoneInfo  # ✅ built-in timezone support
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, send_from_directory
 
@@ -39,7 +40,7 @@ def save_submissions(data):
 def save_submission(name, alamat, koordinat, image_b64):
     # Decode and save image
     img_bytes = base64.b64decode(image_b64)
-    now = datetime.now()
+    now = datetime.now(ZoneInfo("Asia/Jakarta"))  # ✅ GMT+7
     timestamp_str = now.strftime('%Y%m%d_%H%M%S')
     date_key = now.strftime('%d%m%Y')
     safe_name = normalize_name(name).replace(' ', '_')
@@ -92,7 +93,7 @@ def form():
 @app.route('/attendance')
 def show_details():
     raw_data = load_submissions()
-    today_key = datetime.now().strftime('%d%m%Y')
+    today_key = datetime.now(ZoneInfo("Asia/Jakarta")).strftime('%d%m%Y')  # ✅ GMT+7
     attendees = []
 
     day_data = raw_data.get(today_key, {})
