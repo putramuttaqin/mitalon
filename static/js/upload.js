@@ -69,9 +69,38 @@ navigator.geolocation.getCurrentPosition(async pos => {
   lat = pos.coords.latitude;
   long = pos.coords.longitude;
   koordinatSpan.textContent = `${lat}, ${long}`;
+
   const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${long}&format=json`);
   const data = await res.json();
-  address = data.display_name || '-';
+
+  const addr = data.address || {};
+
+  // Prioritized address fields to include
+  const parts = [
+    addr.attraction,
+    addr.building,
+    addr.office,
+    addr.shop,
+    addr.amenity,
+    addr.road,
+    addr.house_number,
+    addr.neighbourhood,
+    addr.block,
+    addr.residential,
+    addr.village || addr.hamlet || addr.town,
+    addr.city_district,
+    addr.suburb || addr.district || addr.city,
+    addr.county
+    // purposely exclude: addr.state, addr.postcode, addr.country
+  ];
+
+  // Filter out duplicates and empty values
+  const seen = new Set();
+  const cleanedParts = parts
+    .filter(part => part && !seen.has(part) && seen.add(part));
+
+  const lokasi_str = cleanedParts.join(', ');
+  address = lokasi_str || '-';
   alamatSpan.textContent = address;
 });
 

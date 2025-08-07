@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Mita Lon{% endblock %}
+{% block title %}MitaLon{% endblock %}
 
 {% block content %}
 <div class="bg-light">
   <div class="form-wrapper bg-white shadow rounded p-4">
-    <h3 class="text-center mb-4">Mita lon</h3>
+    <a href="/" class="btn btn-secondary">Kembali</a>
+    <h3 class="text-center mb-4">MitaLon</h3>
 
     <!-- Nama Input -->
     <div class="mb-3 position-relative">
@@ -16,8 +17,8 @@
 
     <!-- Location Info (Moved up) -->
     <div class="location-info mb-3">
-      <div><strong>Alamat:</strong> <span id="alamat">-</span></div>
-      <div><strong>Koordinat:</strong> <span id="koordinat">-</span></div>
+      <div><strong>Lokasi:</strong> <span id="alamat">-</span></div>
+      <div class="hidden"><strong>Koordinat:</strong> <span id="koordinat">-</span></div>
     </div>
 
     <!-- Kamera -->
