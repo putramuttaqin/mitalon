@@ -10,39 +10,43 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 load_dotenv()
 app = Flask(__name__)
 
-UPLOAD_FOLDER = 'uploads'
-DATA_FOLDER = 'data'
-SUBMISSION_JSON = os.path.join(DATA_FOLDER, 'submissions.json')
+UPLOAD_FOLDER = "uploads"
+DATA_FOLDER = "data"
+SUBMISSION_JSON = os.path.join(DATA_FOLDER, "submissions.json")
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(DATA_FOLDER, exist_ok=True)
+
 
 # === UTILITIES ===
 def normalize_name(name):
     return name.strip().lower()
 
+
 def load_submissions():
     try:
-        with open(SUBMISSION_JSON, 'r') as f:
+        with open(SUBMISSION_JSON, "r") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
+
 def save_submissions(data):
-    with open(SUBMISSION_JSON, 'w') as f:
+    with open(SUBMISSION_JSON, "w") as f:
         json.dump(data, f, indent=2)
+
 
 def save_submission(name, alamat, koordinat, image_b64):
     # Decode and save image
     img_bytes = base64.b64decode(image_b64)
     now = datetime.now(ZoneInfo("Asia/Jakarta"))  # ✅ GMT+7
-    timestamp_str = now.strftime('%Y%m%d_%H%M%S')
-    date_key = now.strftime('%d%m%Y')
-    safe_name = normalize_name(name).replace(' ', '_')
+    timestamp_str = now.strftime("%Y%m%d_%H%M%S")
+    date_key = now.strftime("%d%m%Y")
+    safe_name = normalize_name(name).replace(" ", "_")
     image_filename = f"{timestamp_str}_{safe_name}.jpg"
     image_path = os.path.join(UPLOAD_FOLDER, image_filename)
 
-    with open(image_path, 'wb') as f:
+    with open(image_path, "wb") as f:
         f.write(img_bytes)
 
     # Update submissions
@@ -51,29 +55,32 @@ def save_submission(name, alamat, koordinat, image_b64):
         submissions[date_key] = {}
 
     submissions[date_key][name] = {
-        'alamat': alamat,
-        'koordinat': koordinat,
-        'image': image_filename,
-        'timestamp': timestamp_str,
-        'synced': False  # ✅ Mark as not yet backed up
+        "alamat": alamat,
+        "koordinat": koordinat,
+        "image": image_filename,
+        "timestamp": timestamp_str,
+        "synced": False,  # ✅ Mark as not yet backed up
     }
 
     save_submissions(submissions)
     return image_filename
 
+
 # === ROUTES ===
-@app.route('/')
+@app.route("/")
 def home():
-    return render_template('home.html')
+    return render_template("home.html")
 
-@app.route('/form')
+
+@app.route("/form")
 def form():
-    return render_template('form.html')
+    return render_template("form.html")
 
-@app.route('/attendance')
+
+@app.route("/attendance")
 def show_details():
     raw_data = load_submissions()
-    today_key = datetime.now(ZoneInfo("Asia/Jakarta")).strftime('%d%m%Y')
+    today_key = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d%m%Y")
     attendees = []
 
     day_data = raw_data.get(today_key, {})
@@ -85,43 +92,49 @@ def show_details():
         except ValueError:
             formatted_time = timestamp
 
-        attendees.append({
-            "name": name,
-            "alamat": details.get("alamat", ""),
-            "image": details.get("image", ""),
-            "timestamp": formatted_time,
-        })
+        attendees.append(
+            {
+                "name": name,
+                "alamat": details.get("alamat", ""),
+                "image": details.get("image", ""),
+                "timestamp": formatted_time,
+            }
+        )
 
     return render_template("attendance.html", attendees=attendees)
 
-@app.route('/upload', methods=['POST'])
+
+@app.route("/upload", methods=["POST"])
 def upload():
     try:
         data = request.get_json()
-        name = data.get('nama', '').strip()
-        alamat = data.get('alamat', '')
-        koordinat = data.get('koordinat', '')
-        image_b64 = data.get('image', '')
+        name = data.get("nama", "").strip()
+        alamat = data.get("alamat", "")
+        koordinat = data.get("koordinat", "")
+        image_b64 = data.get("image", "")
 
         if not name or not image_b64:
-            return jsonify({'status': 'error', 'message': 'Invalid data'}), 400
+            return jsonify({"status": "error", "message": "Invalid data"}), 400
 
         image_filename = save_submission(name, alamat, koordinat, image_b64)
-        return jsonify({'status': 'ok', 'filename': image_filename})
+        return jsonify({"status": "ok", "filename": image_filename})
 
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route('/uploads/<path:filename>')
+
+@app.route("/uploads/<path:filename>")
 def uploaded_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
-@app.route('/ping')
+
+@app.route("/ping")
 def ping():
     return "pong"
 
+
 # === MAIN ===
-if __name__ == '__main__':
+if __name__ == "__main__":
     if not os.path.exists(SUBMISSION_JSON):
         save_submissions({})
     app.run(debug=True)
