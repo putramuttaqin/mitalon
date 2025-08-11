@@ -13,7 +13,6 @@ app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 DATA_FOLDER = 'data'
 SUBMISSION_JSON = os.path.join(DATA_FOLDER, 'submissions.json')
-GAS_URL = os.getenv('GAS_URL', 'https://script.google.com/macros/s/YOUR_GAS_URL/exec')
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(DATA_FOLDER, exist_ok=True)
@@ -55,7 +54,8 @@ def save_submission(name, alamat, koordinat, image_b64):
         'alamat': alamat,
         'koordinat': koordinat,
         'image': image_filename,
-        'timestamp': timestamp_str
+        'timestamp': timestamp_str,
+        'synced': False  # ✅ Mark as not yet backed up
     }
 
     save_submissions(submissions)
