@@ -144,6 +144,10 @@ def upload():
 def uploaded_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
+@app.route('/ping')
+def ping():
+    return "pong"
+
 # === MAIN ===
 if __name__ == '__main__':
     if not os.path.exists(SUBMISSION_JSON):
