@@ -1,8 +1,6 @@
 import os
 import json
 import base64
-import queue
-import threading
 from datetime import datetime
 from zoneinfo import ZoneInfo  # ✅ built-in timezone support
 from dotenv import load_dotenv
@@ -12,15 +10,13 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 load_dotenv()
 app = Flask(__name__)
 
-UPLOAD_FOLDER = 'uploads'  # Updated to match your root /uploads folder
+UPLOAD_FOLDER = 'uploads'
 DATA_FOLDER = 'data'
 SUBMISSION_JSON = os.path.join(DATA_FOLDER, 'submissions.json')
 GAS_URL = os.getenv('GAS_URL', 'https://script.google.com/macros/s/YOUR_GAS_URL/exec')
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(DATA_FOLDER, exist_ok=True)
-
-task_queue = queue.Queue()
 
 # === UTILITIES ===
 def normalize_name(name):
@@ -65,22 +61,6 @@ def save_submission(name, alamat, koordinat, image_b64):
     save_submissions(submissions)
     return image_filename
 
-def background_worker():
-    import requests
-    while True:
-        payload = task_queue.get()
-        try:
-            requests.post(GAS_URL, json=payload, timeout=10)
-        except Exception as e:
-            print(f"[GAS Upload Failed] {e}")
-        task_queue.task_done()
-
-def forward_to_gas_async(payload):
-    task_queue.put(payload)
-
-# Start background worker
-# threading.Thread(target=background_worker, daemon=True).start()
-
 # === ROUTES ===
 @app.route('/')
 def home():
@@ -93,7 +73,7 @@ def form():
 @app.route('/attendance')
 def show_details():
     raw_data = load_submissions()
-    today_key = datetime.now(ZoneInfo("Asia/Jakarta")).strftime('%d%m%Y')  # ✅ GMT+7
+    today_key = datetime.now(ZoneInfo("Asia/Jakarta")).strftime('%d%m%Y')
     attendees = []
 
     day_data = raw_data.get(today_key, {})
@@ -103,7 +83,7 @@ def show_details():
             dt = datetime.strptime(timestamp, "%Y%m%d_%H%M%S")
             formatted_time = dt.strftime("%d/%m/%Y - %H:%M:%S")
         except ValueError:
-            formatted_time = timestamp  # fallback to raw
+            formatted_time = timestamp
 
         attendees.append({
             "name": name,
@@ -127,15 +107,6 @@ def upload():
             return jsonify({'status': 'error', 'message': 'Invalid data'}), 400
 
         image_filename = save_submission(name, alamat, koordinat, image_b64)
-
-        # Comment for now
-        # forward_to_gas_async({
-        #     'nama': name,
-        #     'alamat': alamat,
-        #     'koordinat': koordinat,
-        #     'image': image_b64
-        # })
-
         return jsonify({'status': 'ok', 'filename': image_filename})
 
     except Exception as e:
