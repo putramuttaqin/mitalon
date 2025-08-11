@@ -7,7 +7,7 @@ const koordinatSpan = $('koordinat');
 
 let lat = '', long = '', address = '', pegawaiList = [];
 
-// Load pegawai list
+// Load pegawai list for suggestions
 fetch('/static/pegawai.json')
   .then(res => res.json())
   .then(data => {
@@ -35,20 +35,19 @@ function renderSuggestions(list) {
   suggestionsBox.classList.remove('hidden');
 }
 
-// Suggestions hide on click elsewhere
+// Hide suggestions when clicking outside
 document.addEventListener('click', e => {
   if (!suggestionsBox.contains(e.target) && e.target !== namaInput) {
     suggestionsBox.classList.add('hidden');
   }
 });
 
-// Reload suggestions on focus
+// Show all suggestions on focus
 namaInput.addEventListener('focus', () => {
-  namaInput.value = '';
   renderSuggestions(pegawaiList);
 });
 
-// Disable upload button if already uploaded
+// Disable upload if already uploaded today
 namaInput.addEventListener('blur', async () => {
   const name = namaInput.value.trim();
   if (name) {
@@ -64,7 +63,7 @@ async function hasAlreadyUploaded(name) {
   return data.uploaded;
 }
 
-// Get location
+// Get location and reverse geocode
 navigator.geolocation.getCurrentPosition(async pos => {
   lat = pos.coords.latitude;
   long = pos.coords.longitude;
@@ -72,48 +71,41 @@ navigator.geolocation.getCurrentPosition(async pos => {
 
   const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${long}&format=json`);
   const data = await res.json();
-
   const addr = data.address || {};
 
-  // Prioritized address fields to include
+  // Ordered address parts
   const parts = [
-    addr.attraction,
-    addr.building,
-    addr.office,
-    addr.shop,
-    addr.amenity,
-    addr.road,
-    addr.house_number,
-    addr.neighbourhood,
-    addr.block,
-    addr.residential,
-    addr.village || addr.hamlet || addr.town,
-    addr.city_district,
-    addr.suburb || addr.district || addr.city,
+    addr.attraction, addr.building, addr.office, addr.shop, addr.amenity,
+    addr.road, addr.house_number, addr.neighbourhood, addr.block,
+    addr.residential, addr.village || addr.hamlet || addr.town,
+    addr.city_district, addr.suburb || addr.district || addr.city,
     addr.county
-    // purposely exclude: addr.state, addr.postcode, addr.country
   ];
 
-  // Filter out duplicates and empty values
+  // Remove duplicates and empty
   const seen = new Set();
-  const cleanedParts = parts
-    .filter(part => part && !seen.has(part) && seen.add(part));
-
-  const lokasi_str = cleanedParts.join(', ');
-  address = lokasi_str || '-';
+  address = parts.filter(p => p && !seen.has(p) && seen.add(p)).join(', ') || '-';
   alamatSpan.textContent = address;
 });
 
 // Upload button click
 uploadBtn.onclick = async () => {
-  const name = namaInput.value.trim();
   if (!validateInputs()) return;
 
   try {
     showPopup('loading');
-    const resized = await resizeImage(capturedBlob, 800, 0.7); // Resize to 800px max, 70% quality
+    const timestamp = new Date().toLocaleString('id-ID');
+
+    // Resize & watermark
+    const resized = await resizeAndWatermarkImage(capturedBlob, 800, 0.7, {
+      alamat: address,
+      koordinat: `${lat}, ${long}`,
+      timestamp
+    });
+
     const base64Data = await blobToBase64(resized);
-    await uploadToServer(base64Data, name);
+    await uploadToServer(base64Data, namaInput.value.trim());
+
     showPopup('success');
     setTimeout(() => window.location.href = "/", 2000);
   } catch (err) {
@@ -169,13 +161,12 @@ function showPopup(type, message = "") {
   }
 }
 
-// Resize image using hidden canvas
-function resizeImage(blob, maxSize = 800, quality = 0.7) {
+// Resize image and draw watermark text
+function resizeAndWatermarkImage(blob, maxSize = 800, quality = 0.7, textData = {}) {
   return new Promise(resolve => {
     const img = new Image();
     img.onload = () => {
       let { width, height } = img;
-
       if (width > maxSize || height > maxSize) {
         if (width > height) {
           height *= maxSize / width;
@@ -187,9 +178,32 @@ function resizeImage(blob, maxSize = 800, quality = 0.7) {
       }
 
       const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
       canvas.width = width;
       canvas.height = height;
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+      // Draw image
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Draw text watermark
+      ctx.font = "16px Arial";
+      ctx.fillStyle = "white";
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+
+      const lines = [
+        textData.alamat || '',
+        textData.koordinat || '',
+        textData.timestamp || ''
+      ];
+      let y = height - (lines.length * 22) - 10;
+
+      lines.forEach(line => {
+        ctx.strokeText(line, 10, y);
+        ctx.fillText(line, 10, y);
+        y += 22;
+      });
+
       canvas.toBlob(resized => resolve(resized), 'image/jpeg', quality);
     };
     img.src = URL.createObjectURL(blob);
