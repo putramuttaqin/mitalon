@@ -128,9 +128,9 @@ def uploaded_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
 
-@app.route("/ping")
-def ping():
-    return "pong"
+@app.route("/healthz")
+def healthz():
+    return "OK", 200
 
 
 # === MAIN ===
