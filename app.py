@@ -79,7 +79,7 @@ def forward_to_gas_async(payload):
     task_queue.put(payload)
 
 # Start background worker
-threading.Thread(target=background_worker, daemon=True).start()
+# threading.Thread(target=background_worker, daemon=True).start()
 
 # === ROUTES ===
 @app.route('/')
@@ -128,12 +128,13 @@ def upload():
 
         image_filename = save_submission(name, alamat, koordinat, image_b64)
 
-        forward_to_gas_async({
-            'nama': name,
-            'alamat': alamat,
-            'koordinat': koordinat,
-            'image': image_b64
-        })
+        # Comment for now
+        # forward_to_gas_async({
+        #     'nama': name,
+        #     'alamat': alamat,
+        #     'koordinat': koordinat,
+        #     'image': image_b64
+        # })
 
         return jsonify({'status': 'ok', 'filename': image_filename})
 
