@@ -1,5 +1,9 @@
 /* Homepage */
 /* Dark Mode */
+body {
+  padding-top: 70px;
+}
+
 .dark-mode {
     background-color: #175980;
     color: #ffffff;
