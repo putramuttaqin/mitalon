@@ -94,12 +94,23 @@ uploadBtn.onclick = async () => {
 
   try {
     showPopup('loading');
-    const timestamp = new Date().toLocaleString('id-ID');
+    const now = new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" });
+    const date = new Date(now);
+
+    // helper untuk padding 2 digit
+    const pad = (n) => n.toString().padStart(2, "0");
+
+    const timestamp =
+      pad(date.getDate()) + "/" +
+      pad(date.getMonth() + 1) + "/" +
+      date.getFullYear() + " - " +
+      pad(date.getHours()) + ":" +
+      pad(date.getMinutes()) + ":" +
+      pad(date.getSeconds());
 
     // Resize & watermark
     const resized = await resizeAndWatermarkImage(capturedBlob, 800, 0.7, {
       alamat: address,
-      koordinat: `${lat}, ${long}`,
       timestamp
     });
 
@@ -193,7 +204,6 @@ function resizeAndWatermarkImage(blob, maxSize = 800, quality = 0.7, textData = 
 
       const lines = [
         textData.alamat || '',
-        textData.koordinat || '',
         textData.timestamp || ''
       ];
       let y = height - (lines.length * 22) - 10;

@@ -6,6 +6,17 @@
     min-height: 100vh;
 }
 
+/* Logo uniform size */
+.hut-logo {
+  height: 50px;   /* atur sesuai selera */
+  width: auto;
+}
+
+/* Navbar merah putih */
+.hut-navbar {
+  background: linear-gradient(to bottom, red 50%, white 50%);
+}
+
 /* Centered Home Content */
 .home-container {
     display: flex;
@@ -64,7 +75,7 @@
   overflow-y: auto;
   position: absolute;
   width: 100%;
-  background: white;
+  background: rgb(75, 75, 75);
   z-index: 1000;
 }
 
