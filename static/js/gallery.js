@@ -1,4 +1,3 @@
-const galeriBtn = document.getElementById('galeriBtn');
 const fileInput = document.getElementById('fileInput');
 
 galeriBtn.onclick = () => fileInput.click();
@@ -20,6 +19,7 @@ fileInput.onchange = () => {
       capturedBlob = dataURLtoBlob(e.target.result);
       ambilBtn.classList.add('hidden');
       galeriBtn.classList.add('hidden');
+      toggleBtn.classList.add('hidden');
       fotoActions.classList.remove('hidden');
     };
     img.src = e.target.result;

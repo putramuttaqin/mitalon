@@ -6,7 +6,7 @@
 <div class="dark-mode">
   <div class="form-wrapper shadow rounded p-4">
     <a href="/" class="btn btn-secondary">Kembali</a>
-    <h3 class="text-center mb-4">MitaLon</h3>
+    <h3 class="text-center mb-4">MITALON</h3>
 
     <!-- Nama Input -->
     <div class="mb-3 position-relative">
@@ -15,23 +15,37 @@
       <div id="suggestions" class="suggestions hidden"></div>
     </div>
 
-    <!-- Location Info (Moved up) -->
+    <!-- Lokasi -->
     <div class="location-info mb-3">
       <div><strong>Lokasi:</strong> <span id="alamat">-</span></div>
       <div class="hidden"><strong>Koordinat:</strong> <span id="koordinat">-</span></div>
     </div>
 
     <!-- Kamera -->
-    <div class="mb-3">
+    <div class="mb-3 camera-container">
       <video id="video" autoplay playsinline class="border"></video>
       <canvas id="canvas" class="hidden mt-3"></canvas>
     </div>
 
-    <!-- Foto Buttons -->
-    <div class="text-center">
-      <button id="ambilFoto" class="btn btn-primary mb-3">Ambil Foto</button>
+    <!-- Camera Controls -->
+    <div class="camera-controls mt-3">
+      <!-- Upload button -->
+      <button id="galeriBtn" class="icon-btn upload-btn">
+        <img src="/static/images/gallery.png" alt="Gallery" />
+      </button>
+
+      <!-- Capture button -->
+      <button id="ambilFoto" class="capture-btn"></button>
+
+      <!-- Toggle camera button -->
+      <button id="toggleCamera" class="icon-btn toggle-btn">
+        <img src="/static/images/toggle.png" alt="Toggle Camera" />
+      </button>
+    </div>
+
+    <!-- Foto Actions -->
+    <div class="text-center mt-3">
       <input type="file" id="fileInput" accept="image/*" class="d-none">
-      <button id="galeriBtn" class="btn btn-secondary mb-3 ms-2">Upload dari Galeri</button>
       <div id="fotoActions" class="d-flex justify-content-center gap-2 hidden flex-wrap">
         <button id="fotoUlang" class="btn btn-secondary">Foto Ulang</button>
         <button id="uploadFoto" class="btn btn-success">Upload Foto</button>
@@ -72,7 +86,7 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/piexifjs"></script>
-<script src="/static/js/camera.js"></script>
-<script src="/static/js/gallery.js"></script>
-<script src="/static/js/upload.js"></script>
+<script src="{{ url_for('static', filename='js/camera.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/gallery.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/upload.js') }}?v=2"></script>
 {% endblock %}
