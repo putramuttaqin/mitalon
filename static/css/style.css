@@ -1,7 +1,7 @@
 /* Homepage */
 /* Dark Mode */
 .dark-mode {
-    background-color: #121212;
+    background-color: #175980;
     color: #ffffff;
     min-height: 100vh;
 }
@@ -122,6 +122,10 @@
 .hidden,
 hidden {
   display: none !important;
+}
+
+.narasi {
+  color: rgb(192, 192, 192);
 }
 
 @media (max-width: 768px) {
