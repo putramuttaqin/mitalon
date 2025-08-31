@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Perjalanan Dinas Luar{% endblock %}
+
+{% block content %}
+<div class="dark-mode">
+  <div class="form-wrapper shadow rounded p-4">
+    <a href="/" class="btn btn-secondary mb-3">Kembali</a>
+    <h3 class="text-center mb-4">Dokumentasi Perjalanan Dinas</h3>
+
+    <!-- Kamera -->
+    <div class="mb-3 camera-container">
+      <video id="video" autoplay playsinline class="border"></video>
+      <canvas id="canvas" class="hidden mt-3"></canvas>
+    </div>
+
+    <!-- Camera Controls -->
+    <div class="camera-controls mt-3">
+      <!-- Toggle camera button -->
+      <button class="icon-btn toggle-btn">
+        <img src="/static/favicon.ico" alt="Toggle Camera" />
+      </button>
+
+      <!-- Capture button -->
+      <button id="ambilFoto" class="capture-btn"></button>
+
+      <!-- Toggle camera button -->
+      <button id="toggleCamera" class="icon-btn toggle-btn">
+        <img src="/static/images/toggle.png" alt="Toggle Camera" />
+      </button>
+    </div>
+
+    <!-- Foto Actions -->
+    <div class="text-center mt-3">
+      <div id="fotoActions" class="d-flex justify-content-center gap-2 hidden flex-wrap">
+        <button id="fotoUlang" class="btn btn-secondary">Foto Ulang</button>
+        <button id="downloadFoto" class="btn btn-success">Download Foto</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dinasluar.js') }}?v=1"></script>
+{% endblock %}

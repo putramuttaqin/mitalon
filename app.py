@@ -132,6 +132,31 @@ def uploaded_file(filename):
 def healthz():
     return "OK", 200
 
+@app.route("/dinasluar")
+def dinas_luar():
+    return render_template("dinasluar.html")
+
+@app.route("/upload_dinasluar", methods=["POST"])
+def upload_dinasluar():
+    try:
+        data = request.get_json()
+        image_b64 = data.get("image", "")
+        if not image_b64:
+            return jsonify({"status": "error", "message": "No image provided"}), 400
+
+        img_bytes = base64.b64decode(image_b64)
+        now = datetime.now(ZoneInfo("Asia/Jakarta"))
+        timestamp_str = now.strftime("%Y%m%d_%H%M%S")
+        image_filename = f"dinasluar_{timestamp_str}.jpg"
+        image_path = os.path.join(UPLOAD_FOLDER, image_filename)
+
+        with open(image_path, "wb") as f:
+            f.write(img_bytes)
+
+        return jsonify({"status": "ok", "filename": image_filename})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # === MAIN ===
 if __name__ == "__main__":
