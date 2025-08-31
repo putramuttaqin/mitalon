@@ -5,6 +5,7 @@ const ambilBtn = document.getElementById('ambilFoto');
 const toggleBtn = document.getElementById('toggleCamera');
 const ulangBtn = document.getElementById('fotoUlang');
 const downloadBtn = document.getElementById('downloadFoto');
+const dummyBtn = document.getElementById('dummyButton');
 const fotoActions = document.getElementById('fotoActions');
 
 let currentStream = null;
@@ -86,6 +87,7 @@ ambilBtn.onclick = async () => {
     video.classList.add('hidden');
     ambilBtn.classList.add('hidden');
     toggleBtn.classList.add('hidden');
+    dummyBtn.classList.add('hidden');
     fotoActions.classList.remove('hidden');
   };
   img.src = URL.createObjectURL(watermarkedBlob);
@@ -99,6 +101,7 @@ ulangBtn.onclick = () => {
 
   ambilBtn.classList.remove('hidden');
   toggleBtn.classList.remove('hidden');
+  dummyBtn.classList.remove('hidden');
   fotoActions.classList.add('hidden');
 
   capturedBlob = null;
