@@ -59,8 +59,9 @@ body {
 #canvas {
   width: 100%;
   max-height: 360px;
-  object-fit: cover;
+  object-fit: contain; /* 🔄 biar full kelihatan, tidak di-crop */
   border-radius: 5px;
+  background: black;   /* biar ada background hitam kalau aspect ratio beda */
 }
 
 .hidden {
