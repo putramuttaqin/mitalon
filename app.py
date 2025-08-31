@@ -71,6 +71,9 @@ def save_submission(name, alamat, koordinat, image_b64):
 def home():
     return render_template("home.html")
 
+@app.route('/mitalon')
+def mitalon():
+    return render_template('mitalon.html')
 
 @app.route("/form")
 def form():
