@@ -7,6 +7,7 @@ const ulangBtn = document.getElementById('fotoUlang');
 const downloadBtn = document.getElementById('downloadFoto');
 const dummyBtn = document.getElementById('dummyButton');
 const fotoActions = document.getElementById('fotoActions');
+const alamatPreview = document.getElementById('alamatPreview');
 
 let currentStream = null;
 let useFrontCamera = false; // default rear camera
@@ -40,6 +41,10 @@ toggleBtn.onclick = () => {
   startCamera();
 };
 
+// Awal disable tombol ambil
+ambilBtn.disabled = true;
+ambilBtn.innerText = "Menunggu lokasi...";
+
 // === GEOLOCATION ===
 navigator.geolocation.getCurrentPosition(async pos => {
   lat = pos.coords.latitude;
@@ -60,9 +65,22 @@ navigator.geolocation.getCurrentPosition(async pos => {
 
     const seen = new Set();
     address = parts.filter(p => p && !seen.has(p) && seen.add(p)).join(', ') || '-';
+
+    // Update preview + enable tombol
+    alamatPreview.textContent = address;
+    ambilBtn.disabled = false;
+    ambilBtn.innerText = "";
   } catch (e) {
     console.error("Failed reverse geocode:", e);
+    alamatPreview.textContent = "Gagal memuat alamat";
+    ambilBtn.disabled = false; // masih bisa ambil tapi alamat '-'
+    ambilBtn.innerText = "";
   }
+}, err => {
+  console.error("Geolocation error:", err);
+  alamatPreview.textContent = "Lokasi tidak tersedia";
+  ambilBtn.disabled = false; // fallback tetap bisa ambil
+  ambilBtn.innerText = "";
 });
 
 // === CAPTURE PHOTO WITH WATERMARK ===
