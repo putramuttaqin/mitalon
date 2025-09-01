@@ -160,7 +160,7 @@ function addWatermarkOnCanvas(inputCanvas, addressText) {
     const formattedDate = `${today.getDate()} ${monthNames[today.getMonth()]} ${today.getFullYear()}`;
 
     const leftText = addressText || '-';
-    const rightTextLines = ["Mitalon", formattedDate];
+    const rightTextLines = ["Mitalon", "Kanwil Kemenkum Aceh", formattedDate];
 
     ctx.font = "20px Arial";
     ctx.fillStyle = "white";
@@ -177,17 +177,47 @@ function addWatermarkOnCanvas(inputCanvas, addressText) {
       ctx.fillText(line, padding, y);
     });
 
-    // Draw right bottom
-    rightTextLines.forEach((line, i) => {
-      const metrics = ctx.measureText(line);
-      const y = canvasW.height - (rightTextLines.length - i) * 26 - padding;
-      ctx.strokeText(line, canvasW.width - metrics.width - padding, y);
-      ctx.fillText(line, canvasW.width - metrics.width - padding, y);
-    });
+    // Load and draw watermark logo + right bottom text
+    const logo = new Image();
+    logo.src = "/static/images/watermark.png"; // path logo pengayoman
+    logo.onload = () => {
+      const logoSize = 60; // atur ukuran logo
+      const textLineHeight = 26;
 
-    canvasW.toBlob(blob => resolve(blob), 'image/jpeg', 0.9);
+      // Hitung total tinggi blok teks + logo
+      const totalHeight = logoSize + rightTextLines.length * textLineHeight + padding * 2;
+
+      // Posisi Y awal (logo paling atas)
+      let startY = canvasW.height - totalHeight;
+
+      // Posisi logo (kanan bawah di atas teks)
+      ctx.drawImage(logo, canvasW.width - logoSize - padding, startY, logoSize, logoSize);
+
+      // Posisi teks (di bawah logo)
+      rightTextLines.forEach((line, i) => {
+        const metrics = ctx.measureText(line);
+        const y = startY + logoSize + (i + 1) * textLineHeight;
+        ctx.strokeText(line, canvasW.width - metrics.width - padding, y);
+        ctx.fillText(line, canvasW.width - metrics.width - padding, y);
+      });
+
+      canvasW.toBlob(blob => resolve(blob), 'image/jpeg', 0.9);
+    };
+
+    logo.onerror = () => {
+      console.error("Gagal load logo watermark");
+      // fallback: tetap render teks tanpa logo
+      rightTextLines.forEach((line, i) => {
+        const metrics = ctx.measureText(line);
+        const y = canvasW.height - (rightTextLines.length - i) * 26 - padding;
+        ctx.strokeText(line, canvasW.width - metrics.width - padding, y);
+        ctx.fillText(line, canvasW.width - metrics.width - padding, y);
+      });
+      canvasW.toBlob(blob => resolve(blob), 'image/jpeg', 0.9);
+    };
   });
 }
+
 
 // Helper for wrapping long text
 function wrapText(ctx, text, maxWidth) {
