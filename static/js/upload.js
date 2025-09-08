@@ -208,11 +208,11 @@ function resizeAndWatermarkImage(blob, maxSize = 800, quality = 0.7, textData = 
       ];
       let y = height - (lines.length * 22) - 10;
 
-      lines.forEach(line => {
-        ctx.strokeText(line, 10, y);
-        ctx.fillText(line, 10, y);
-        y += 22;
-      });
+      // lines.forEach(line => {
+      //  ctx.strokeText(line, 10, y);
+      //  ctx.fillText(line, 10, y);
+      //  y += 22;
+      // });
 
       canvas.toBlob(resized => resolve(resized), 'image/jpeg', quality);
     };
