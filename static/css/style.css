@@ -1,4 +1,6 @@
-/* Global */
+/* =========================
+   GLOBAL & DARK MODE
+========================= */
 body {
   padding-top: 70px;
 }
@@ -15,9 +17,9 @@ body {
   width: auto;
 }
 
-/* Navbar merah putih */
+/* Navbar */
 .hut-navbar {
-  background: linear-gradient(to bottom, red 50%, white 50%);
+  background: rgb(67, 67, 68);
 }
 
 /* Centered Home Content */
@@ -39,7 +41,7 @@ body {
   margin-bottom: 1.5rem;
 }
 
-/* Dark Mode Form */
+/* Dark Form Box */
 .dark-form {
   background-color: #1e1e1e !important;
   color: #f8f9fa;
@@ -52,16 +54,6 @@ body {
 
 .container.py-4 {
   max-width: 600px;
-}
-
-/* Camera feed */
-#video,
-#canvas {
-  width: 100%;
-  max-height: 360px;
-  object-fit: contain; /* 🔄 biar full kelihatan, tidak di-crop */
-  border-radius: 5px;
-  background: black;   /* biar ada background hitam kalau aspect ratio beda */
 }
 
 .hidden {
@@ -100,7 +92,9 @@ body {
   min-width: 130px;
 }
 
-/* Popup */
+/* =========================
+   POPUP OVERLAY
+========================= */
 .popup-overlay {
   position: fixed;
   top: 0;
@@ -133,22 +127,63 @@ body {
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
 }
 
-/* Camera container */
-.camera-container {
+/* =========================
+   FULLSCREEN CAMERA
+========================= */
+.camera-fullscreen {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 220px); /* Adjust based on navbar/title height */
+  background: black;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+#video,
+#canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: black;
+  border-radius: 10px;
+}
+
+/* Optional gradient overlay for readability */
+.camera-fullscreen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent 60%);
+  pointer-events: none;
+}
+
+/* =========================
+   CAMERA OVERLAY CONTROLS
+========================= */
+.camera-overlay {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  z-index: 10;
+}
+
+/* Main control row (centered) */
+.control-row {
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative;
+  gap: 30px;
 }
 
-/* Camera controls (upload left, capture center, toggle right) */
-.camera-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 15px;
-}
-
+/* Buttons inside video */
 .icon-btn {
   background: none;
   border: none;
@@ -158,41 +193,18 @@ body {
 
 .icon-btn img {
   width: 40px;
-  /* atur ukuran icon */
   height: 40px;
-  object-fit: contain;
+  filter: invert(1); /* make icons visible on dark background */
 }
 
-/* Upload button (blue) */
-.upload-btn {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  background-color: #ffffff;
-  color: #fff;
-  font-size: 1.2rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  transition: transform 0.1s ease, background-color 0.2s ease;
-}
-
-.upload-btn:active {
-  background-color: #1976d2;
-  transform: scale(0.9);
-}
-
-/* Capture button (red big) */
+/* Capture button (big red circle) */
 .capture-btn {
-  width: 70px;
-  height: 70px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   border: 4px solid #fff;
   background-color: #f44336;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
   cursor: pointer;
   transition: transform 0.1s ease, background-color 0.2s ease;
 }
@@ -202,34 +214,26 @@ body {
   transform: scale(0.95);
 }
 
-/* Toggle camera button (green) */
-.toggle-btn {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  background-color: #ffffff;
-  color: #fff;
-  font-size: 1.2rem;
+/* Foto actions (appear above controls) */
+.foto-actions {
   display: flex;
+  gap: 10px;
   justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  transition: transform 0.1s ease, background-color 0.2s ease;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 10px 15px;
+  border-radius: 10px;
 }
 
-.toggle-btn:active {
-  background-color: #388e3c;
-  transform: scale(0.9);
-}
-
-/* Narasi text */
+/* =========================
+   EXTRA ELEMENTS
+========================= */
 .narasi {
   color: rgb(192, 192, 192);
 }
 
-/* Responsive */
+/* =========================
+   RESPONSIVE DESIGN
+========================= */
 @media (max-width: 768px) {
   .popup-gif {
     width: 150px;
@@ -239,5 +243,19 @@ body {
   .form-wrapper {
     padding: 1rem;
     margin: 1rem auto;
+  }
+
+  .capture-btn {
+    width: 70px;
+    height: 70px;
+  }
+
+  .icon-btn img {
+    width: 35px;
+    height: 35px;
+  }
+
+  .camera-fullscreen {
+    height: calc(100vh - 200px);
   }
 }

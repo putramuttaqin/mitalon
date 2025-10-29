@@ -5,40 +5,31 @@
 {% block content %}
 <div class="dark-mode">
   <div class="form-wrapper shadow rounded p-4">
-    <a href="/" class="btn btn-secondary mb-3">Kembali</a>
-    <h3 class="text-center mb-4">Dokumentasi Perjalanan Dinas</h3>
+    <h3 class="text-center mb-2">Dokumentasi Perjalanan Dinas</h3>
 
-    <div id="alamatPreview" class="text-center text-sm text-gray-700 mb-2">
-      Sedang mengambil lokasi...
-    </div>
+    <!-- Fullscreen camera -->
+    <div class="camera-fullscreen">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="canvas" class="hidden"></canvas>
 
-    <!-- Kamera -->
-    <div class="mb-3 camera-container">
-      <video id="video" autoplay playsinline class="border"></video>
-      <canvas id="canvas" class="hidden mt-3"></canvas>
-    </div>
+      <!-- Overlay controls -->
+      <div class="camera-overlay">
+        <div class="control-row">
+          <button id="toggleCamera" class="icon-btn">
+            <img src="/static/images/toggle.png" alt="Toggle Camera" />
+          </button>
 
-    <!-- Camera Controls -->
-    <div class="camera-controls mt-3">
-      <!-- Toggle camera button -->
-      <button id="dummyButton" class="icon-btn toggle-btn">
-        <img src="/static/favicon.ico" alt="Toggle Camera" />
-      </button>
+          <button id="ambilFoto" class="capture-btn"></button>
 
-      <!-- Capture button -->
-      <button id="ambilFoto" class="capture-btn"></button>
+          <button id="dummyButton" class="icon-btn">
+            <img src="/static/images/gallery.png" alt="Switch" />
+          </button>
+        </div>
 
-      <!-- Toggle camera button -->
-      <button id="toggleCamera" class="icon-btn toggle-btn">
-        <img src="/static/images/toggle.png" alt="Toggle Camera" />
-      </button>
-    </div>
-
-    <!-- Foto Actions -->
-    <div class="text-center mt-3">
-      <div id="fotoActions" class="d-flex justify-content-center gap-2 hidden flex-wrap">
-        <button id="fotoUlang" class="btn btn-secondary">Foto Ulang</button>
-        <button id="downloadFoto" class="btn btn-success">Download Foto</button>
+        <div id="fotoActions" class="foto-actions hidden">
+          <button id="fotoUlang" class="btn btn-secondary">Foto Ulang</button>
+          <button id="downloadFoto" class="btn btn-success">Download</button>
+        </div>
       </div>
     </div>
   </div>
