@@ -7,6 +7,10 @@
   <div class="form-wrapper shadow rounded p-4">
     <h3 class="text-center mb-2">Dokumentasi Perjalanan Dinas</h3>
 
+    <div id="alamatPreview" class="text-center text-sm text-gray-400 mb-2">
+      Sedang mengambil lokasi...
+    </div>
+
     <!-- Fullscreen camera -->
     <div class="camera-fullscreen">
       <video id="video" autoplay playsinline></video>
@@ -26,9 +30,17 @@
           </button>
         </div>
 
+        <!-- Foto actions -->
         <div id="fotoActions" class="foto-actions hidden">
           <button id="fotoUlang" class="btn btn-secondary">Foto Ulang</button>
           <button id="downloadFoto" class="btn btn-success">Download</button>
+        </div>
+
+        <!-- Zoom controls -->
+        <div class="zoom-controls">
+          <button class="zoom-btn" data-zoom="0.5">0.5×</button>
+          <button class="zoom-btn" data-zoom="1">1×</button>
+          <button class="zoom-btn" data-zoom="2">2×</button>
         </div>
       </div>
     </div>
@@ -37,5 +49,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/dinasluar.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/dinasluar.js') }}?v=4"></script>
 {% endblock %}
