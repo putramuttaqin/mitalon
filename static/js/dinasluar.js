@@ -7,11 +7,13 @@ const ulangBtn = document.getElementById('fotoUlang');
 const downloadBtn = document.getElementById('downloadFoto');
 const dummyBtn = document.getElementById('dummyButton');
 const fotoActions = document.getElementById('fotoActions');
+const zoomButtons = document.querySelectorAll('.zoom-btn');
 
 let currentStream = null;
-let useFrontCamera = false; // default rear camera
+let useFrontCamera = false;
 let capturedBlob = null;
 let lat = '', long = '', address = '-';
+let currentZoom = 1;
 
 // === CAMERA FUNCTIONS ===
 async function startCamera() {
@@ -26,21 +28,30 @@ async function startCamera() {
   try {
     currentStream = await navigator.mediaDevices.getUserMedia(constraints);
     video.srcObject = currentStream;
+    video.onloadedmetadata = () => video.play();
+    applyZoom(1); // Reset zoom to default
   } catch (err) {
     alert("Gagal mengakses kamera: " + err);
   }
 }
 
-// Start camera on load
+// === ZOOM FUNCTION ===
+function applyZoom(level) {
+  currentZoom = level;
+  video.style.transform = `scale(${currentZoom})`;
+  video.style.transformOrigin = "center center";
+  video.style.transition = "transform 0.25s ease";
+}
+
+// === INITIALIZE CAMERA ===
 startCamera();
 
-// Toggle camera
 toggleBtn.onclick = () => {
   useFrontCamera = !useFrontCamera;
   startCamera();
 };
 
-// Awal disable tombol ambil
+// Disable ambil foto until location ready
 ambilBtn.disabled = true;
 ambilBtn.innerText = "Menunggu lokasi...";
 
@@ -65,27 +76,32 @@ navigator.geolocation.getCurrentPosition(async pos => {
     const seen = new Set();
     address = parts.filter(p => p && !seen.has(p) && seen.add(p)).join(', ') || '-';
 
-    // Update preview + enable tombol
     ambilBtn.disabled = false;
     ambilBtn.innerText = "";
   } catch (e) {
     console.error("Failed reverse geocode:", e);
-    ambilBtn.disabled = false; // masih bisa ambil tapi alamat '-'
+    ambilBtn.disabled = false;
     ambilBtn.innerText = "";
   }
 }, err => {
   console.error("Geolocation error:", err);
-  ambilBtn.disabled = false; // fallback tetap bisa ambil
+  ambilBtn.disabled = false;
   ambilBtn.innerText = "";
 });
 
-// === CAPTURE PHOTO WITH WATERMARK ===
+// === CAPTURE PHOTO WITH WATERMARK + PREVIEW ===
 ambilBtn.onclick = async () => {
   const tempCanvas = document.createElement('canvas');
   const ctxTemp = tempCanvas.getContext('2d');
   tempCanvas.width = video.videoWidth;
   tempCanvas.height = video.videoHeight;
-  ctxTemp.drawImage(video, 0, 0);
+
+  // Draw video with zoom adjustment
+  const scaledWidth = video.videoWidth / currentZoom;
+  const scaledHeight = video.videoHeight / currentZoom;
+  const sx = (video.videoWidth - scaledWidth) / 2;
+  const sy = (video.videoHeight - scaledHeight) / 2;
+  ctxTemp.drawImage(video, sx, sy, scaledWidth, scaledHeight, 0, 0, tempCanvas.width, tempCanvas.height);
 
   const watermarkedBlob = await addWatermarkOnCanvas(tempCanvas, address);
 
@@ -108,7 +124,7 @@ ambilBtn.onclick = async () => {
   capturedBlob = watermarkedBlob;
 };
 
-// Retake photo
+// === RETAKE PHOTO ===
 ulangBtn.onclick = () => {
   canvas.classList.add('hidden');
   video.classList.remove('hidden');
@@ -121,21 +137,20 @@ ulangBtn.onclick = () => {
   capturedBlob = null;
 };
 
-// Download photo
+// === DOWNLOAD + BACKUP ===
 downloadBtn.onclick = async () => {
   if (!capturedBlob) return alert("Belum ada foto yang diambil!");
 
   const today = new Date();
   const url = URL.createObjectURL(capturedBlob);
 
-  // Trigger download
   const a = document.createElement('a');
   a.href = url;
   a.download = `travel_${today.getTime()}.jpg`;
   a.click();
   URL.revokeObjectURL(a.href);
 
-  // Upload to server as backup
+  // Backup upload
   const reader = new FileReader();
   reader.onloadend = async () => {
     const base64Data = reader.result.split(',')[1];
@@ -184,30 +199,21 @@ function addWatermarkOnCanvas(inputCanvas, addressText) {
 
     const leftLines = wrapText(ctx, leftText, canvasW.width * 0.45);
 
-    // Draw left bottom
     leftLines.forEach((line, i) => {
       const y = canvasW.height - (leftLines.length - i) * 26 - padding;
       ctx.strokeText(line, padding, y);
       ctx.fillText(line, padding, y);
     });
 
-    // Load and draw watermark logo + right bottom text
     const logo = new Image();
-    logo.src = "/static/images/watermark.png"; // path logo pengayoman
+    logo.src = "/static/images/watermark.png";
     logo.onload = () => {
-      const logoSize = 60; // atur ukuran logo
+      const logoSize = 60;
       const textLineHeight = 26;
-
-      // Hitung total tinggi blok teks + logo
       const totalHeight = logoSize + rightTextLines.length * textLineHeight + padding * 2;
-
-      // Posisi Y awal (logo paling atas)
       let startY = canvasW.height - totalHeight;
-
-      // Posisi logo (kanan bawah di atas teks)
       ctx.drawImage(logo, canvasW.width - logoSize - padding, startY, logoSize, logoSize);
 
-      // Posisi teks (di bawah logo)
       rightTextLines.forEach((line, i) => {
         const metrics = ctx.measureText(line);
         const y = startY + logoSize + (i + 1) * textLineHeight;
@@ -219,8 +225,6 @@ function addWatermarkOnCanvas(inputCanvas, addressText) {
     };
 
     logo.onerror = () => {
-      console.error("Gagal load logo watermark");
-      // fallback: tetap render teks tanpa logo
       rightTextLines.forEach((line, i) => {
         const metrics = ctx.measureText(line);
         const y = canvasW.height - (rightTextLines.length - i) * 26 - padding;
@@ -232,8 +236,7 @@ function addWatermarkOnCanvas(inputCanvas, addressText) {
   });
 }
 
-
-// Helper for wrapping long text
+// === TEXT WRAP HELPER ===
 function wrapText(ctx, text, maxWidth) {
   const words = text.split(' ');
   const lines = [];
@@ -242,9 +245,8 @@ function wrapText(ctx, text, maxWidth) {
   for (let i = 1; i < words.length; i++) {
     const word = words[i];
     const width = ctx.measureText(currentLine + ' ' + word).width;
-    if (width < maxWidth) {
-      currentLine += ' ' + word;
-    } else {
+    if (width < maxWidth) currentLine += ' ' + word;
+    else {
       lines.push(currentLine);
       currentLine = word;
     }
@@ -252,3 +254,11 @@ function wrapText(ctx, text, maxWidth) {
   lines.push(currentLine);
   return lines;
 }
+
+// === ZOOM BUTTONS ===
+zoomButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const level = parseFloat(btn.dataset.zoom);
+    applyZoom(level);
+  });
+});
