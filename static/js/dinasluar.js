@@ -124,16 +124,28 @@ ambilBtn.onclick = async () => {
   const mainCtx = canvas.getContext('2d');
   const img = new Image();
   img.onload = () => {
-    canvas.width = img.width;
-    canvas.height = img.height;
-    mainCtx.drawImage(img, 0, 0);
+    // match visible size
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
 
+    mainCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    // ensure it fills and shows correctly
+    canvas.style.display = "block";
+    canvas.style.width = "100%";
+    canvas.style.height = "auto";
+    canvas.style.objectFit = "contain";
+    canvas.style.background = "#000";
+
+    // toggle visibility
     canvas.classList.remove('hidden');
     video.classList.add('hidden');
     ambilBtn.classList.add('hidden');
     toggleBtn.classList.add('hidden');
     dummyBtn.classList.add('hidden');
     fotoActions.classList.remove('hidden');
+
+    console.log("Preview drawn:", canvas.width, canvas.height);
   };
   img.src = URL.createObjectURL(watermarkedBlob);
   capturedBlob = watermarkedBlob;
