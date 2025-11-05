@@ -17,11 +17,11 @@
 .dl-page .form-wrapper {
   width: 100%;
   max-width: 700px;
-  margin: 2rem auto;
+  margin: 0;
   background: rgba(15, 25, 40, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
-  padding: 1.2rem 0 0 0;
+  padding: 1rem 0 0 0;
   box-shadow: 0 0 20px rgba(0, 80, 255, 0.15);
   overflow: hidden;
   backdrop-filter: blur(10px);
