@@ -71,16 +71,11 @@ def save_submission(name, alamat, koordinat, image_b64):
 def home():
     return render_template("home.html")
 
-@app.route('/mitalon')
-def mitalon():
-    return render_template('mitalon.html')
-
-@app.route("/form")
+@app.route("/absen")
 def form():
-    return render_template("form.html")
+    return render_template("absen.html")
 
-
-@app.route("/attendance")
+@app.route("/list_absen")
 def show_details():
     raw_data = load_submissions()
     today_key = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d%m%Y")
@@ -104,7 +99,7 @@ def show_details():
             }
         )
 
-    return render_template("attendance.html", attendees=attendees)
+    return render_template("list_absen.html", attendees=attendees)
 
 
 @app.route("/upload", methods=["POST"])
