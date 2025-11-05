@@ -50,45 +50,72 @@ async function listAndChooseCamera(preferBack = true) {
   }
 }
 
-async function startCamera(deviceId) {
+async function startCamera() {
   if (currentStream) {
-    currentStream.getTracks().forEach((t) => t.stop());
+    currentStream.getTracks().forEach(track => track.stop());
   }
 
   const constraints = {
-    video: {
-      deviceId: { exact: deviceId },
-      facingMode: "environment",
-      width: { ideal: 1280 },
-      height: { ideal: 720 },
-    },
+    video: { facingMode: useFrontCamera ? "user" : "environment" }
   };
 
-  const stream = await navigator.mediaDevices.getUserMedia(constraints);
-  currentStream = stream;
-  video.srcObject = stream;
+  try {
+    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = currentStream;
+    video.onloadedmetadata = () => video.play();
 
-  // Extract track and capabilities
-  track = stream.getVideoTracks()[0];
-  capabilities = track.getCapabilities ? track.getCapabilities() : null;
+    // === Detect capabilities ===
+    const [track] = currentStream.getVideoTracks();
+    const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+    const settings = track.getSettings ? track.getSettings() : {};
+    const zoomInfo = document.createElement("div");
+    zoomInfo.id = "zoomInfo";
+    zoomInfo.style.color = "#aaa";
+    zoomInfo.style.fontSize = "0.9rem";
+    zoomInfo.style.textAlign = "center";
+    zoomInfo.style.marginTop = "4px";
 
-  if (capabilities && capabilities.zoom) {
-    cameraInfo.innerHTML += `<br>Zoom range: ${capabilities.zoom.min} - ${capabilities.zoom.max}`;
-  } else {
-    cameraInfo.innerHTML += `<br>Zoom not supported by this device.`;
+    const container = document.querySelector(".dl-camera");
+    let text = "";
+
+    if (capabilities.zoom) {
+      const { min, max, step } = capabilities.zoom;
+      text = `Zoom range: ${min}× to ${max}× (step ${step || 0.1}), current: ${settings.zoom || 1}×`;
+      // Set default zoom to minimum (acts as “ultrawide”)
+      const defaultZoom = min || 1;
+      applyZoom(defaultZoom, track, capabilities);
+    } else {
+      text = "Zoom not supported on this camera.";
+    }
+
+    zoomInfo.textContent = text;
+
+    // Replace or append below video
+    const existingInfo = document.getElementById("zoomInfo");
+    if (existingInfo) existingInfo.remove();
+    container.insertAdjacentElement("afterend", zoomInfo);
+
+  } catch (err) {
+    alert("Gagal mengakses kamera: " + err);
   }
 }
 
-function applyZoom(level) {
+function applyZoom(level, track, capabilities) {
   currentZoom = level;
   if (track && capabilities && capabilities.zoom) {
     const settings = { advanced: [{ zoom: currentZoom }] };
-    track.applyConstraints(settings).catch((e) => console.error("Zoom apply failed:", e));
+    track.applyConstraints(settings).catch(e => console.error("Zoom apply failed:", e));
   } else {
     video.style.transform = `scale(${currentZoom})`;
     video.style.transformOrigin = "center center";
+    video.style.transition = "transform 0.25s ease";
   }
+
+  // Update zoom text if visible
+  const zoomInfo = document.getElementById("zoomInfo");
+  if (zoomInfo) zoomInfo.textContent = `Current zoom: ${currentZoom}×`;
 }
+
 
 document.querySelectorAll(".zoom-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
