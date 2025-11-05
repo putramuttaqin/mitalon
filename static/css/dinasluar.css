@@ -1,24 +1,28 @@
 /* ===== DINAS LUAR CAMERA STYLES (ISOLATED) ===== */
 
-/* Page wrapper for dinasluar.html */
+/* ---- Page Layout ---- */
 .dl-page {
   background-color: #111;
   color: #fff;
   min-height: 100vh;
   margin: 0;
   padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
 /* ---- Navbar ---- */
 .navbar.dl-navbar {
-  background-color: #0a0a0a; /* darker variant of background */
+  background-color: #0a0a0a;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* ---- Form Wrapper ---- */
 .dl-page .form-wrapper {
+  width: 100%;
   max-width: 700px;
-  margin: 0 auto; /* no extra margin for navbar */
+  margin: 0 auto;
   background: #1b1b1b;
   border-radius: 12px;
   padding: 1rem 0 0 0; /* top padding only */
@@ -32,38 +36,33 @@
   margin-bottom: 0.3rem;
 }
 
-#alamatPreview {
-  text-align: center;
-  font-size: 0.85rem;
-  color: #aaa;
-  margin-bottom: 0.5rem;
-}
-
 /* ---- Camera Container ---- */
 .dl-camera {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 4;
   background: black;
   overflow: hidden;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
 }
 
+/* ---- Video ---- */
 .dl-camera video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transform: scale(1); /* default zoom-out */
+  object-fit: cover; /* fills full frame */
+  transform: scale(1); /* default zoom (true-to-life) */
   transition: transform 0.3s ease;
 }
 
+/* ---- Canvas ---- */
 .dl-camera canvas {
   display: none;
 }
 
-/* ---- Overlay (gradient + controls) ---- */
+/* ---- Overlay ---- */
 .dl-overlay {
   position: absolute;
   inset: 0;
@@ -71,15 +70,15 @@
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.65), transparent 60%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent 60%);
   z-index: 5;
   pointer-events: none;
 }
 
-/* ---- Zoom Controls (Top Center) ---- */
+/* ---- Zoom Controls ---- */
 .dl-zoom {
   position: absolute;
-  top: 10px;
+  top: 8px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -91,8 +90,8 @@
 }
 
 .dl-zoom button {
-  background: rgba(0, 0, 0, 0.7);
-  border: 1px solid #888;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid #777;
   color: white;
   border-radius: 6px;
   padding: 5px 10px;
@@ -102,10 +101,10 @@
 }
 
 .dl-zoom button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
 }
 
-/* ---- Camera Controls Row ---- */
+/* ---- Camera Controls ---- */
 .dl-controls {
   display: flex;
   justify-content: center;
@@ -179,7 +178,7 @@
   color: #fff;
 }
 
-/* ---- Responsive ---- */
+/* ---- Responsive Adjustments ---- */
 @media (max-width: 768px) {
   .dl-page .form-wrapper {
     max-width: 100%;
@@ -187,7 +186,7 @@
   }
 
   .dl-camera {
-    aspect-ratio: 3 / 4; /* taller for mobile */
+    aspect-ratio: 3 / 4;
   }
 
   .dl-capture {
@@ -202,7 +201,7 @@
   }
 
   .dl-zoom {
-    top: 8px;
+    top: 6px;
     gap: 0.4rem;
   }
 

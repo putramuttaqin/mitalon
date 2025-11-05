@@ -14,6 +14,8 @@ let useFrontCamera = false;
 let capturedBlob = null;
 let lat = '', long = '', address = '-';
 let currentZoom = 1;
+let track = null;
+let capabilities = null;
 
 // === CAMERA FUNCTIONS ===
 async function startCamera() {
@@ -28,8 +30,19 @@ async function startCamera() {
   try {
     currentStream = await navigator.mediaDevices.getUserMedia(constraints);
     video.srcObject = currentStream;
+    track = currentStream.getVideoTracks()[0];
+    capabilities = track.getCapabilities();
+
+    // Reset zoom
+    if (capabilities.zoom) {
+      currentZoom = capabilities.zoom.min || 1;
+      applyZoom(currentZoom);
+    } else {
+      currentZoom = 1;
+      applyZoom(currentZoom);
+    }
+
     video.onloadedmetadata = () => video.play();
-    applyZoom(1); // Reset zoom to default
   } catch (err) {
     alert("Gagal mengakses kamera: " + err);
   }
@@ -38,9 +51,16 @@ async function startCamera() {
 // === ZOOM FUNCTION ===
 function applyZoom(level) {
   currentZoom = level;
-  video.style.transform = `scale(${currentZoom})`;
-  video.style.transformOrigin = "center center";
-  video.style.transition = "transform 0.25s ease";
+  if (track && capabilities && capabilities.zoom) {
+    // Use real camera zoom
+    const settings = { advanced: [{ zoom: currentZoom }] };
+    track.applyConstraints(settings).catch(e => console.error("Zoom apply failed:", e));
+  } else {
+    // Fallback for browsers/devices without camera zoom
+    video.style.transform = `scale(${currentZoom})`;
+    video.style.transformOrigin = "center center";
+    video.style.transition = "transform 0.25s ease";
+  }
 }
 
 // === INITIALIZE CAMERA ===
@@ -96,12 +116,16 @@ ambilBtn.onclick = async () => {
   tempCanvas.width = video.videoWidth;
   tempCanvas.height = video.videoHeight;
 
-  // Draw video with zoom adjustment
-  const scaledWidth = video.videoWidth / currentZoom;
-  const scaledHeight = video.videoHeight / currentZoom;
-  const sx = (video.videoWidth - scaledWidth) / 2;
-  const sy = (video.videoHeight - scaledHeight) / 2;
-  ctxTemp.drawImage(video, sx, sy, scaledWidth, scaledHeight, 0, 0, tempCanvas.width, tempCanvas.height);
+  // Draw video with proper zoomed frame
+  if (capabilities && capabilities.zoom) {
+    ctxTemp.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+  } else {
+    const scaledWidth = video.videoWidth / currentZoom;
+    const scaledHeight = video.videoHeight / currentZoom;
+    const sx = (video.videoWidth - scaledWidth) / 2;
+    const sy = (video.videoHeight - scaledHeight) / 2;
+    ctxTemp.drawImage(video, sx, sy, scaledWidth, scaledHeight, 0, 0, tempCanvas.width, tempCanvas.height);
+  }
 
   const watermarkedBlob = await addWatermarkOnCanvas(tempCanvas, address);
 
@@ -189,7 +213,7 @@ function addWatermarkOnCanvas(inputCanvas, addressText) {
     const formattedDate = `${today.getDate()} ${monthNames[today.getMonth()]} ${today.getFullYear()}`;
 
     const leftText = addressText || '-';
-    const rightTextLines = ["Mitalon", "Kanwil Kemenkum Aceh", formattedDate];
+    const rightTextLines = ["Mitalon", "Kanwil Kemenkum RI Aceh", formattedDate];
 
     ctx.font = "20px Arial";
     ctx.fillStyle = "white";
