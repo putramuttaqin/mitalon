@@ -21,6 +21,10 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.hut-navbar h2 {
+  color: #ffcc80;
+}
+
 /* Centered Home Content */
 .home-container {
   display: flex;
