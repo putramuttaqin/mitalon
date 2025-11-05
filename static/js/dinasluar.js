@@ -1,137 +1,122 @@
 let video = document.getElementById("video");
 let canvas = document.getElementById("canvas");
-let ambilFoto = document.getElementById("ambilFoto");
-let fotoUlang = document.getElementById("fotoUlang");
-let downloadFoto = document.getElementById("downloadFoto");
-let fotoActions = document.getElementById("fotoActions");
-let zoomButtons = document.querySelectorAll(".zoom-btn");
-
-let stream = null;
+let currentStream = null;
+let currentZoom = 1;
 let track = null;
 let capabilities = null;
-let currentZoom = 1;
 
-// === DEBUG AREA for mobile testing ===
-const deviceInfoDiv = document.createElement("div");
-deviceInfoDiv.className = "dl-device-info";
-document.querySelector(".dl-camera").appendChild(deviceInfoDiv);
-// =====================================
+const cameraInfo = document.createElement("div");
+cameraInfo.style.textAlign = "center";
+cameraInfo.style.fontSize = "0.8rem";
+cameraInfo.style.color = "#aaa";
+cameraInfo.style.marginTop = "6px";
+video.insertAdjacentElement("afterend", cameraInfo);
 
-// Start default camera
-async function startCamera(deviceId = null) {
-  if (stream) {
-    stream.getTracks().forEach(t => t.stop());
+async function listAndChooseCamera(preferBack = true) {
+  try {
+    // Request permission first so labels become available
+    await navigator.mediaDevices.getUserMedia({ video: true });
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter((d) => d.kind === "videoinput");
+
+    cameraInfo.innerHTML = "<b>Detected cameras:</b><br>";
+    videoDevices.forEach((cam, i) => {
+      cameraInfo.innerHTML += `${i}: ${cam.label || "Unnamed"}<br>`;
+    });
+
+    // --- Pick the most suitable one ---
+    let chosenDevice = null;
+
+    // Prefer "ultrawide" in label if exists
+    chosenDevice = videoDevices.find((d) =>
+      d.label.toLowerCase().includes("wide")
+    );
+
+    // Otherwise, prefer back camera
+    if (!chosenDevice && preferBack) {
+      chosenDevice = videoDevices.find((d) =>
+        d.label.toLowerCase().includes("back")
+      );
+    }
+
+    // Fallback: first camera
+    if (!chosenDevice) chosenDevice = videoDevices[0];
+
+    cameraInfo.innerHTML += `<br><b>Using:</b> ${chosenDevice.label || "Unknown Camera"}<br>`;
+    await startCamera(chosenDevice.deviceId);
+  } catch (e) {
+    console.error("Camera detection failed:", e);
+    cameraInfo.innerText = "Gagal mendeteksi kamera.";
+  }
+}
+
+async function startCamera(deviceId) {
+  if (currentStream) {
+    currentStream.getTracks().forEach((t) => t.stop());
   }
 
   const constraints = {
-    audio: false,
     video: {
+      deviceId: { exact: deviceId },
       facingMode: "environment",
       width: { ideal: 1280 },
       height: { ideal: 720 },
     },
   };
 
-  if (deviceId) constraints.video.deviceId = { exact: deviceId };
+  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  currentStream = stream;
+  video.srcObject = stream;
 
-  try {
-    stream = await navigator.mediaDevices.getUserMedia(constraints);
-    video.srcObject = stream;
+  // Extract track and capabilities
+  track = stream.getVideoTracks()[0];
+  capabilities = track.getCapabilities ? track.getCapabilities() : null;
 
-    track = stream.getVideoTracks()[0];
-    capabilities = track.getCapabilities ? track.getCapabilities() : {};
-
-    showAvailableDevices(); // refresh device list
-  } catch (err) {
-    console.error("Camera start failed:", err);
-    deviceInfoDiv.innerHTML = `<p style="color:red">Gagal membuka kamera: ${err.message}</p>`;
+  if (capabilities && capabilities.zoom) {
+    cameraInfo.innerHTML += `<br>Zoom range: ${capabilities.zoom.min} - ${capabilities.zoom.max}`;
+  } else {
+    cameraInfo.innerHTML += `<br>Zoom not supported by this device.`;
   }
 }
 
-async function showAvailableDevices() {
-  const devices = await navigator.mediaDevices.enumerateDevices();
-  const cameras = devices.filter(d => d.kind === "videoinput");
-
-  deviceInfoDiv.innerHTML = "<h5>Pilih Kamera:</h5>";
-
-  cameras.forEach(cam => {
-    const btn = document.createElement("button");
-    btn.textContent = cam.label || `Kamera ${cam.deviceId.slice(0, 5)}...`;
-    btn.className = "dl-btn dl-btn-secondary d-block w-100 mb-2";
-    btn.onclick = () => startCamera(cam.deviceId);
-    deviceInfoDiv.appendChild(btn);
-  });
-
-  if (cameras.length === 0) {
-    deviceInfoDiv.innerHTML += "<p>Tidak ada kamera terdeteksi.</p>";
-  }
-}
-
-// === ZOOM FUNCTION ===
 function applyZoom(level) {
   currentZoom = level;
   if (track && capabilities && capabilities.zoom) {
     const settings = { advanced: [{ zoom: currentZoom }] };
-    track.applyConstraints(settings).catch(e => {
-      console.error("Zoom apply failed:", e);
-    });
+    track.applyConstraints(settings).catch((e) => console.error("Zoom apply failed:", e));
   } else {
     video.style.transform = `scale(${currentZoom})`;
     video.style.transformOrigin = "center center";
-    video.style.transition = "transform 0.25s ease";
   }
 }
 
-zoomButtons.forEach(btn => {
+document.querySelectorAll(".zoom-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
-    const zoomLevel = parseFloat(btn.dataset.zoom);
-    applyZoom(zoomLevel);
+    const level = parseFloat(btn.dataset.zoom);
+    applyZoom(level);
   });
 });
 
-// === PHOTO CAPTURE ===
-ambilFoto.addEventListener("click", () => {
+// --- Capture photo with watermark preview ---
+document.getElementById("ambilFoto").addEventListener("click", () => {
   const ctx = canvas.getContext("2d");
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  // Add watermark
+  // Add watermark text
+  const text = "MITALON - Dinas Luar";
   ctx.font = "24px Arial";
-  ctx.fillStyle = "rgba(255,255,255,0.8)";
-  ctx.fillText("MITALON", 20, canvas.height - 40);
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.fillText(text, 20, canvas.height - 30);
 
   // Show preview
-  const img = new Image();
-  img.src = canvas.toDataURL("image/png");
-  img.className = "dl-preview";
-  fotoActions.classList.remove("hidden");
-
-  // Replace video with preview
-  video.classList.add("hidden");
-  canvas.classList.remove("hidden");
-  canvas.replaceWith(img);
-  img.id = "capturedImage";
+  const imgPreview = document.createElement("img");
+  imgPreview.src = canvas.toDataURL("image/png");
+  imgPreview.style.width = "100%";
+  imgPreview.style.borderTop = "1px solid #333";
+  cameraInfo.insertAdjacentElement("afterend", imgPreview);
 });
 
-fotoUlang.addEventListener("click", () => {
-  document.getElementById("capturedImage")?.remove();
-  canvas.classList.add("hidden");
-  video.classList.remove("hidden");
-  fotoActions.classList.add("hidden");
-});
-
-downloadFoto.addEventListener("click", () => {
-  const link = document.createElement("a");
-  link.href = document.getElementById("capturedImage").src;
-  link.download = "foto_dinas.png";
-  link.click();
-});
-
-navigator.mediaDevices.getUserMedia({ video: true })
-  .then(() => showAvailableDevices())
-  .then(() => startCamera())
-  .catch(err => {
-    console.error("Permission denied or no camera:", err);
-    deviceInfoDiv.innerHTML = `<p style="color:red">Tidak bisa mengakses kamera: ${err.message}</p>`;
-  });
+// Initialize
+listAndChooseCamera();
