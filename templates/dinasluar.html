@@ -3,45 +3,39 @@
 {% block title %}Perjalanan Dinas Luar{% endblock %}
 
 {% block content %}
-<div class="dark-mode">
-  <div class="form-wrapper shadow rounded p-4">
-    <h3 class="text-center mb-2">Dokumentasi Perjalanan Dinas</h3>
+<div class="dl-page">
+  <div class="form-wrapper shadow rounded">
+    <h3>Dokumentasi Perjalanan Dinas</h3>
 
-    <div id="alamatPreview" class="text-center text-sm text-gray-400 mb-2">
-      Sedang mengambil lokasi...
-    </div>
+    <div id="alamatPreview">Sedang mengambil lokasi...</div>
 
-    <!-- Fullscreen camera -->
-    <div class="camera-fullscreen">
+    <div class="dl-camera">
       <video id="video" autoplay playsinline></video>
       <canvas id="canvas" class="hidden"></canvas>
 
-      <!-- Overlay controls -->
-      <div class="camera-overlay">
-        <div class="control-row">
-          <button id="toggleCamera" class="icon-btn">
+      <div class="dl-overlay">
+        <div class="dl-controls">
+          <button id="toggleCamera" class="dl-icon-btn">
             <img src="/static/images/toggle.png" alt="Toggle Camera" />
           </button>
 
-          <button id="ambilFoto" class="capture-btn"></button>
+          <button id="ambilFoto" class="dl-capture"></button>
 
-          <button id="dummyButton" class="icon-btn">
+          <button id="dummyButton" class="dl-icon-btn">
             <img src="/static/images/gallery.png" alt="Switch" />
           </button>
         </div>
 
-        <!-- Foto actions -->
-        <div id="fotoActions" class="foto-actions hidden">
-          <button id="fotoUlang" class="btn btn-secondary">Foto Ulang</button>
-          <button id="downloadFoto" class="btn btn-success">Download</button>
+        <div id="fotoActions" class="dl-actions hidden">
+          <button id="fotoUlang" class="dl-btn dl-btn-secondary">Foto Ulang</button>
+          <button id="downloadFoto" class="dl-btn dl-btn-success">Download</button>
         </div>
+      </div>
 
-        <!-- Zoom controls -->
-        <div class="zoom-controls">
-          <button class="zoom-btn" data-zoom="0.5">0.5×</button>
-          <button class="zoom-btn" data-zoom="1">1×</button>
-          <button class="zoom-btn" data-zoom="2">2×</button>
-        </div>
+      <div class="dl-zoom">
+        <button class="zoom-btn" data-zoom="0.5">0.5×</button>
+        <button class="zoom-btn" data-zoom="1">1×</button>
+        <button class="zoom-btn" data-zoom="2">2×</button>
       </div>
     </div>
   </div>
