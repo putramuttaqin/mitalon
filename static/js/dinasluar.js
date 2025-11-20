@@ -22,46 +22,66 @@ async function startCamera() {
   }
 
   try {
-    // Enumerate devices first to find all cameras
+    // Step 1: Enumerate devices
     const devices = await navigator.mediaDevices.enumerateDevices();
     const videoDevices = devices.filter(d => d.kind === "videoinput");
 
-    // Try to find the most zoomed-out / ultrawide camera
     let selectedDevice = null;
+
+    // Cari kamera ultra wide / wide
     for (const device of videoDevices) {
-      if (device.label.toLowerCase().includes("wide") || device.label.toLowerCase().includes("ultra")) {
+      const label = device.label.toLowerCase();
+      if (label.includes("ultra") || label.includes("wide")) {
         selectedDevice = device;
         break;
       }
     }
 
-    // If no ultra wide camera found, use environment (back) or fallback to first
+    // fallback ke kamera belakang jika ada
     if (!selectedDevice) {
-      selectedDevice = videoDevices.find(d => d.label.toLowerCase().includes("back")) || videoDevices[0];
+      selectedDevice =
+        videoDevices.find(d => d.label.toLowerCase().includes("back")) ||
+        null;
     }
 
+    // Step 2: Constraints (lebih fleksibel)
     const constraints = {
       video: {
-        deviceId: selectedDevice ? { exact: selectedDevice.deviceId } : undefined,
-        facingMode: useFrontCamera ? "user" : "environment"
+        facingMode: useFrontCamera ? "user" : "environment",
+        deviceId: selectedDevice ? { ideal: selectedDevice.deviceId } : undefined
       }
     };
 
+    // Step 3: Try getUserMedia with constraints
     currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-    video.srcObject = currentStream;
-    track = currentStream.getVideoTracks()[0];
-    capabilities = track.getCapabilities();
-
-    // Use the *lowest possible zoom* (most zoomed out)
-    if (capabilities.zoom) {
-      const minZoom = capabilities.zoom.min || 1;
-      track.applyConstraints({ advanced: [{ zoom: minZoom }] }).catch(e => console.warn("Zoom apply failed:", e));
-    }
-
-    video.onloadedmetadata = () => video.play();
   } catch (err) {
-    alert("Gagal mengakses kamera: " + err);
+    console.warn("Primary constraints failed:", err);
+
+    // Step 4: Hard fallback
+    try {
+      currentStream = await navigator.mediaDevices.getUserMedia({
+        video: true
+      });
+    } catch (err2) {
+      alert("Gagal mengakses kamera: " + err2);
+      return;
+    }
   }
+
+  // Step 5: Apply stream
+  video.srcObject = currentStream;
+  track = currentStream.getVideoTracks()[0];
+  capabilities = track.getCapabilities();
+
+  // Step 6: Zoom paling kecil
+  if (capabilities.zoom) {
+    const minZoom = capabilities.zoom.min || 1;
+    track.applyConstraints({
+      advanced: [{ zoom: minZoom }]
+    }).catch(e => console.warn("Zoom apply failed:", e));
+  }
+
+  video.onloadedmetadata = () => video.play();
 }
 
 // === INITIALIZE CAMERA ===
