@@ -62,6 +62,7 @@ def backup_unsynced():
                     "nama": name,
                     "alamat": details.get("alamat", ""),
                     "koordinat": details.get("koordinat", ""),
+                    "timestamp": details.get("timestamp", ""),
                     "image": img_b64
                 }
 
